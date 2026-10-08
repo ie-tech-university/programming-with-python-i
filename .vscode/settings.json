@@ -1,0 +1,12 @@
+{
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "editor.quickSuggestions": {
+        
+
+
+        "other": "on",
+        "comments": "on",
+        "strings": "on"
+    }
+}
