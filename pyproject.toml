@@ -1,0 +1,21 @@
+[project]
+name = "programming-with-python-i"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Gustavo Martin Vela", email = "gustavo.martinvela@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "ipykernel>=7.4.0",
+    "jupyter>=1.1.1",
+    "pandas>=3.0.6",
+]
+
+[project.scripts]
+programming-with-python-i = "programming_with_python_i:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
