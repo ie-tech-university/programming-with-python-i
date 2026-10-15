@@ -1,0 +1,32 @@
+[
+  {
+    "name": "ayam",
+    "age": "20",
+    "email": "ayam@gmail.com",
+    "grade": "f"
+  },
+  {
+    "name": "kuda",
+    "age": "21",
+    "email": "kuda@gmail.com",
+    "grade": "A"
+  },
+  {
+    "name": "Frank",
+    "age": 21,
+    "email": "frank@uni.edu",
+    "grade": "B"
+  },
+  {
+    "name": "Grace",
+    "age": 23,
+    "email": "grace@uni.edu",
+    "grade": "A"
+  },
+  {
+    "name": "Karen",
+    "age": 24,
+    "email": "karen@uni.edu",
+    "grade": "B"
+  }
+]
