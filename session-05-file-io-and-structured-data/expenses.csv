@@ -1,0 +1,17 @@
+date,description,category,amount
+2024-01-05,Grocery store,Food,52.30
+2024-01-06,Bus pass,Transport,40.00
+2024-01-07,Coffee shop,Food,4.50
+2024-01-08,Netflix,Entertainment,15.99
+2024-01-09,Gas station,Transport,bad_data
+2024-01-10,Restaurant,Food,38.75
+2024-01-11,Gym membership,,45.00
+2024-01-12,Bookstore,Education,22.50
+2024-01-13,Electricity bill,Utilities,89.00
+2024-01-14,Movie tickets,Entertainment,24.00
+2024-01-15,Taxi,Transport,18.50
+2024-01-16,Online course,Education,49.99
+2024-01-17,Supermarket,Food,67.20
+2024-01-18,Water bill,Utilities,not_a_number
+2024-01-19,Concert,Entertainment,75.00
+2024-01-20,Pharmacy,Health,12.40
