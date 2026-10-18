@@ -1,0 +1,4 @@
+13-10-2026 16:16:07 - Started learning about file I/O today!13-10-2026 16:16:07 - Python makes reading files so easy.13-10-2026 16:17:11 - Started learning about file I/O today!
+13-10-2026 16:17:11 - Python makes reading files so easy.
+13-10-2026 16:17:13 - Started learning about file I/O today!
+13-10-2026 16:17:13 - Python makes reading files so easy.

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Frank",
+    "age": "21",
+    "email": "frank@uni.edu",
+    "grade": "B"
+  },
+  {
+    "name": "Grace",
+    "age": "23",
+    "email": "grace@uni.edu",
+    "grade": "A"
+  },
+  {
+    "name": "Hank",
+    "age": "not_a_number",
+    "email": "hank@uni.edu",
+    "grade": "C"
+  },
+  {
+    "name": "Ivy",
+    "age": "20",
+    "email": "ivy_no_at_sign",
+    "grade": "A"
+  },
+  {
+    "name": "Jack",
+    "age": "22",
+    "email": "jack@uni.edu",
+    "grade": "Z"
+  },
+  {
+    "name": "Karen",
+    "age": "24",
+    "email": "karen@uni.edu",
+    "grade": "B"
+  }
+]
