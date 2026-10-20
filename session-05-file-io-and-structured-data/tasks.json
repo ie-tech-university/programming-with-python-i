@@ -1,0 +1,4 @@
+[
+    {"title": "Buy groceries", "priority": "high", "done": false},
+    {"title": "Read chapter 5", "priority": "medium", "done": true}
+]
