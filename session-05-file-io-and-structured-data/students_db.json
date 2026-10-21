@@ -1,0 +1,26 @@
+[
+  {
+    "name": "ben dover",
+    "age": 69,
+    "email": "ben.dover@student.ie.edu",
+    "grade": "F"
+  },
+  {
+    "name": "Frank",
+    "age": 21,
+    "email": "frank@uni.edu",
+    "grade": "B"
+  },
+  {
+    "name": "Grace",
+    "age": 23,
+    "email": "grace@uni.edu",
+    "grade": "A"
+  },
+  {
+    "name": "Karen",
+    "age": 24,
+    "email": "karen@uni.edu",
+    "grade": "B"
+  }
+]
