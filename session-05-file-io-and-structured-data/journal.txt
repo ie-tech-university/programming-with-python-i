@@ -1,0 +1,14 @@
+13/10/2026, 15:11:32 - Dodaj tekst 
+13/10/2026, 15:11:34 - Dodaj tekst 
+13/10/2026, 15:11:37 - Dodaj tekst 
+13/10/2026, 15:11:40 - Dodaj tekst 
+13/10/2026, 15:11:41 - Dodaj tekst 
+13/10/2026, 15:13:49 - Entry 
+13/10/2026, 15:16:03 - vidak 
+21/10/2026, 19:25:47 - ENTRY 
+21/10/2026, 19:41:25 - Started learning about file I/O today! 
+21/10/2026, 19:41:28 - Started learning about file I/O today! 
+21/10/2026, 19:41:33 - Started learning about file I/O today! 
+21/10/2026, 19:41:33 - Python makes reading files so easy. 
+21/10/2026, 19:41:40 - Started learning about file I/O today! 
+21/10/2026, 19:41:40 - Python makes reading files so easy. 
