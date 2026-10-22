@@ -1,1 +1,3 @@
-21/10/26, 20:27:09Started learning about file I/O today!
+21/10/26, 22:15:49Started learning about file I/O today!
+21/10/26, 22:15:49Python makes reading files so easy.
+21/10/26, 22:27:33 Python python python hfdhjasdkljfaskjfdklajksljflasjflajs;lfjaldjfaskhfjkadf
