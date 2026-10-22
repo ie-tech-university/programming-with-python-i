@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Frank",
+    "age": 21,
+    "email": "frank@uni.edu",
+    "grade": "B"
+  },
+  {
+    "name": "Grace",
+    "age": 23,
+    "email": "grace@uni.edu",
+    "grade": "C"
+  },
+  {
+    "name": "Karen",
+    "age": 24,
+    "email": "karen@uni.edu",
+    "grade": "B"
+  }
+]

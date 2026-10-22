@@ -1,0 +1,12 @@
+[
+  {
+    "title": "Buy groceries",
+    "priority": "high",
+    "done": true
+  },
+  {
+    "title": "complete python assignment",
+    "priority": "high",
+    "done": false
+  }
+]
