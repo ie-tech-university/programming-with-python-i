@@ -10,8 +10,8 @@
     "done": false
   },
   {
-    "title": "Test 3 task",
+    "title": "Go to gym",
     "priority": "high",
-    "done": false
+    "done": true
   }
 ]
