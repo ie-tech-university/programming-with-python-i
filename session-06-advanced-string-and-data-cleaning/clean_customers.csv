@@ -1,0 +1,11 @@
+name,email,phone,amount,is_valid
+Alice Smith,alice@example.com,(555) 123-4567,1234.56,True
+Bob Johnson,bob.johnson@email.com,(555) 987-6543,890.0,True
+Charlie Williams,,(555) 111-2222,450.75,False
+Diana Prince,diana.prince@heroes.org,,2100.5,True
+Eve Adams,,,0.0,False
+Frank Miller,frank.miller@work.com,,3456.78,True
+Grace Hopper,grace.hopper@navy.mil,(555) 999-0000,12000.0,True
+Hank,,,0.0,False
+Ivy Chen,ivy.chen@university.edu,(555) 444-5555,678.9,True
+Jack Black,jack..black@movies.com,(555) 222-3333,1100.25,True

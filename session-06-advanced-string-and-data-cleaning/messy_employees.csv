@@ -1,0 +1,13 @@
+name,email,phone,department,salary
+   ALICE   SMITH  , ALICE.SMITH@COMPANY.COM  , (555) 123-4567 ,  engineering  , $95,000.00
+  bob    JOHNSON, bob.johnson@company.com,555.987.6543,  MARKETING  ,  $82,500.00
+ CHARLIE   WILLIAMS ,charlie-AT-email,  555 111 2222  ,  Engineering , $78,000.00
+  diana   PRINCE  , diana.prince@company.com , +1-555-333-4444, Marketing ,$105,000.00
+  , , ,  ,
+  Eve    Adams  , eve.adams@  ,  123  ,  SALES  ,  $abc  
+  FRANK   miller  , frank.miller@company.com , 1-555-777-8888 , sales , $91,200.00
+    Grace   HOPPER  ,grace.hopper@company.com,5559990000,  ENGINEERING  ,$120,000.00
+  hank   PATEL  , hank.patel@company.com, (555) 222-3333 , Mktg , $67,800.00
+  Ivy    CHEN  , IVY.CHEN@COMPANY.COM , (555)   444 - 5555 ,  eng  , $  88,500.00  
+  jack    BLACK  , jack.black@company.com , 555-666-7777 , Human Resources , $72,000.00
+  Kate   , kate@company.com , 555-888-9999 ,  HR  , $68,000.00
