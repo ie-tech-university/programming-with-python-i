@@ -1,0 +1,11 @@
+name,email,phone,amount
+   aLiCe   sMiTh  , ALICE@EXAMPLE.COM  , (555) 123-4567 , $1,234.56
+  Bob    Johnson, bob.johnson@email.com,555.987.6543,  $890.00
+ CHARLIE   WILLIAMS ,charlie-AT-email,  555 111 2222  , $450.75
+  diana   PRINCE  , diana.prince@heroes.org , +1-555-333-4444,  2100.50
+  Eve    Adams  , eve.adams@  ,  123  ,  $abc  
+  FRANK   miller  , frank.miller@work.com , 1-555-777-8888 , $3,456.78
+    Grace   HOPPER  ,grace.hopper@navy.mil,5559990000,$12,000.00
+  hank   , , ,
+  Ivy    Chen  , IVY.CHEN@university.EDU , (555)   444 - 5555 , $  678.90  
+  jack    black  , jack..black@movies.com , 555-222-3333 , $1,100.25

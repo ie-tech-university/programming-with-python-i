@@ -1,0 +1,13 @@
+name,email,phone,salary,department,is_valid
+Alice Smith,,(555) 123-4567,95.0,Engineering,False
+Bob Johnson,,(555) 987-6543,82.0,Marketing,False
+Charlie Williams,,(555) 111-2222,78.0,Engineering,False
+Diana Prince,,(555) 333-4444,105.0,Marketing,False
+Unknown,,,0.0,Other,False
+Eve Adams,,,0.0,Sales,False
+Frank Miller,,(555) 777-8888,91.0,Sales,False
+Grace Hopper,grace.hopper@company.com,(555) 999-0000,120.0,Engineering,True
+Hank Patel,,(555) 222-3333,67.0,Marketing,False
+Ivy Chen,,(555) 444-5555,88.0,Engineering,False
+Jack Black,,(555) 666-7777,72.0,Human Resources,False
+Kate,,(555) 888-9999,68.0,Human Resources,False
