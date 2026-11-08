@@ -1,5 +1,5 @@
 # Session I: Concepts Guide
-## Professional Python Foundations and Functional Programming
+## Professional Python Foundations
 
 Welcome to Python I. This guide covers everything you need to set up a **production-ready Python project** and start writing clean, professional code from day one. Read through the explanations and follow along on your own machine **before** attempting the exercises.
 
@@ -14,30 +14,34 @@ Before writing a single line of Python, you need four tools installed on your ma
 
 | Tool | What It Does | Download |
 |------|-------------|----------|
-| **Python** | The language interpreter itself | [python.org/downloads](https://www.python.org/downloads/) |
+| **Python** | The language interpreter itself (uv can also install it for you) | [python.org/downloads](https://www.python.org/downloads/) |
 | **Visual Studio Code** | A powerful, free code editor | [code.visualstudio.com](https://code.visualstudio.com/) |
 | **Git** | Version control system | [git-scm.com](https://git-scm.com/) |
 | **uv** | Modern Python package & project manager | [docs.astral.sh/uv](https://docs.astral.sh/uv/getting-started/installation/) |
 
 ### Verifying Your Installation
 
-After installing, open a terminal (Command Prompt on Windows, Terminal on macOS/Linux) and run:
+After installing, open a terminal (PowerShell on Windows, Terminal on macOS/Linux) and run:
 
 ```bash
-python --version       # Should print Python 3.14.x
-git --version          # Should print git version 2.x.x
-uv --version           # Should print uv 0.x.x
-code --version         # Should print a version number
+uv --version                # Should print uv 0.x.x
+uv python install 3.14      # Let uv install Python 3.14
+uv run python --version     # Should print Python 3.14.x
+git --version               # Should print git version 2.x.x
+code --version              # Should print a version number
 ```
 
 If any of these fail, revisit the installation step before continuing.
+
+> Why not `python --version`? The command is `python3` on macOS and many Linux systems and often `py` on Windows, so we let uv manage Python for us. On macOS, `code` only works after you run **Shell Command: Install 'code' command in PATH** from the VS Code Command Palette.
 
 ### Recommended VS Code Extensions
 
 Once VS Code is installed, add these extensions (search in the Extensions panel):
 
-- **Python** (by Microsoft) — syntax highlighting, linting, debugging
-- **Pylance** — advanced type checking and autocomplete
+- **Python** (by Microsoft) — run and debug Python; it also installs **Pylance** (autocomplete and type checking) and the **Python Debugger**
+- **Jupyter** — open and run the `.ipynb` notebooks used for every exercise
+- **Ruff** (optional) — linting and formatting
 - **GitLens** — visualize Git history inside the editor
 
 ---
@@ -65,13 +69,13 @@ Once VS Code is installed, add these extensions (search in the Extensions panel)
 | `uv add <package>` | Add a package to the project's dependencies |
 | `uv remove <package>` | Remove a package from the project's dependencies |
 | `uv add --upgrade <package>` | Upgrade a package to its latest version |
-| `uv pip install -r requirements.txt` | Install all packages from a requirements file |
+| `uv add -r requirements.txt` | Add all packages from a requirements file to the project (unlike `uv pip install`, they are recorded in `pyproject.toml`) |
 | `uv run script.py` | Run a Python script inside the project's environment |
 | `uv sync` | Install all dependencies to match the `uv.lock` file |
 | `uv tool install <tool>` | Install a CLI tool globally (e.g., `ruff`, `black`) |
 | `uvx <tool> [args]` | Run a CLI tool without installing it permanently |
 
-> Go to **Exercise 1 (Project Setup)** where you will create your first project using `uv`.
+> Go to **Exercise 1 (Project Setup (Terminal Exercise))**, where you will create your first project using `uv`.
 
 ---
 
@@ -182,9 +186,9 @@ A **snapshot** is how Git saves history. It records the state of all tracked fil
 #### Commit
 
 A **commit** is the act of creating a snapshot. Each commit contains:
-- The changes made since the last commit
+- A **snapshot** of all tracked files at that moment (the full state, not just the edits)
 - A reference to its **parent commit** (the one before it)
-- A unique **hash** (e.g., `fb2d2ec5069fc6776c80b3ad6b7cbde3cade4e`)
+- A unique **hash** (e.g., `fb2d2ec5069fc6776c80b3ad6b7cbde3cade4e1a`)
 - A human-readable **message** describing what changed
 
 A project is essentially a chain of commits.
@@ -207,13 +211,31 @@ Key operations between local and remote:
 
 A **branch** is an independent line of development. The main branch is typically called `main` (or `master` in older repos). Developers create branches to work on features separately, then **merge** them back into `main` when ready.
 
+### One-Time Git Setup
+
+Git stamps every commit with your name and email. Set them **once per computer**, before your first commit (otherwise `git commit` fails with *Author identity unknown*):
+
+```bash
+$ git config --global user.name "Your Name"
+$ git config --global user.email "you@example.com"
+# Optional: new repositories start on a branch called main
+$ git config --global init.defaultBranch main
+```
+
+#### Signing in to GitHub
+
+GitHub does not accept your account password for `git push`. Pick one option:
+- **GitHub CLI**: install `gh` and run `gh auth login` (choose HTTPS and log in with the browser); Git then uses that login
+- **Git Credential Manager** (included with Git for Windows): the first `git push` opens a browser window to sign in
+- **Personal access token**: create one on GitHub (Settings → Developer settings) and paste it when Git asks for a password
+
 ### The Three Git Stages
 
 Your local repository has three "areas" managed by Git:
 
 1. **Working Directory** — your actual files on disk
 2. **Staging Area (Index)** — files you have marked to include in the next commit
-3. **Repository (HEAD)** — the committed history
+3. **Repository** — the committed history (`HEAD` is a pointer to the commit you are currently on)
 
 The basic workflow:
 
@@ -238,7 +260,8 @@ $ git commit -m "Add calculator functions"
 | `git log --oneline` | Show commit history (compact format) |
 | `git branch` | List all local branches |
 | `git branch <name>` | Create a new branch |
-| `git checkout <branch>` | Switch to a different branch |
+| `git switch <branch>` | Switch to a different branch (older form: `git checkout <branch>`) |
+| `git switch -c <name>` | Create a new branch and switch to it |
 | `git merge <branch>` | Merge another branch into the current one |
 | `git remote add origin <url>` | Link your local repo to a GitHub repo |
 | `git push -u origin main` | Push your commits to GitHub |
@@ -246,16 +269,26 @@ $ git commit -m "Add calculator functions"
 
 ### The `.gitignore` File
 
-A `.gitignore` file tells Git which files to **never track**. This is critical for keeping your repository clean:
+A `.gitignore` file tells Git which files to **never track**. This is critical for keeping your repository clean. `uv init` creates one for you; it is a starting point you can extend.
+
+What `uv init` generates:
 
 ```gitignore
-# Virtual environments
-.venv/
-
-# Python cache files
+# Python-generated files
 __pycache__/
-*.pyc
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
 
+# Virtual environments
+.venv
+```
+
+Lines worth adding:
+
+```gitignore
 # OS files
 .DS_Store
 Thumbs.db
@@ -267,8 +300,6 @@ Thumbs.db
 # Environment variables (secrets!)
 .env
 ```
-
-> `uv init` creates a `.gitignore` for you automatically, but you should understand what it contains and why.
 
 ### A Typical Git Workflow
 
@@ -289,7 +320,7 @@ $ git commit -m "Add expense tracking function"
 $ git push origin main
 ```
 
-> Go to **Exercise 1 (Project Setup)** where you will initialize a repo, make commits, and push to GitHub.
+> Go to **Exercise 1 (Project Setup (Terminal Exercise))**, where you will check with `git status` that `uv init` also created a Git repository; **Exercise 6 (Modular Code & Git Workflow)** then has you make commits and push to GitHub.
 
 ---
 
@@ -316,7 +347,9 @@ is_enrolled = True
 | `int` | `42` | Whole numbers |
 | `float` | `3.14` | Decimal numbers |
 | `bool` | `True` / `False` | Logical values |
-| `None` | `None` | Represents "no value" |
+| `NoneType` | `None` | Represents "no value" |
+
+> Use `type()` to check the type of any value: `print(type(42))` prints `<class 'int'>` and `print(type(None))` prints `<class 'NoneType'>`.
 
 ### The `print()` Function
 
@@ -356,7 +389,7 @@ age = int(age_str)                    # Convert to integer
 print(f"Hello, {name}! You are {age} years old.")
 ```
 
-> Go to **Exercise 2 (Python Warm-Up)** where you will practice variables, `print()`, and `input()`.
+> Go to **Exercise 2 (Python Warm-Up)**, where you will practice variables, `print()`, and `input()`.
 
 ---
 
@@ -401,7 +434,7 @@ print(power(5, 3))    # 125
 
 ### Docstrings
 
-A **docstring** is a string on the first line of a function that describes what it does. It is enclosed in triple quotes:
+A **docstring** is a string written as the first statement in the function body that describes what the function does. It is enclosed in triple quotes:
 
 ```python
 def calculate_bmi(weight_kg, height_m):
@@ -440,6 +473,8 @@ def divide(a: float, b: float) -> float | None:
     return a / b
 ```
 
+In `divide`, the `if` block runs only when its condition is true; the preview below and Session 2 cover `if` in detail.
+
 ### Common Type Hint Patterns
 
 ```python
@@ -451,7 +486,7 @@ def process(name: str, age: int, gpa: float, active: bool) -> str:
 def find_user(user_id: int) -> str | None:
     ...
 
-# Lists and dicts
+# Lists and dicts (collections, covered in Sessions 2 and 3)
 def average(scores: list[float]) -> float:
     ...
 
@@ -481,7 +516,75 @@ print(calculate_tip(85.50))           # 15.39 (default 18%)
 print(calculate_tip(85.50, 20.0))     # 17.1
 ```
 
-> Go to **Exercise 3 (Multi-Function Calculator)** where you will build a complete calculator using functions with type hints and docstrings.
+> Go to **Exercise 3 (Multi-Function Calculator)**, where you will build a complete calculator using functions with type hints and docstrings.
+
+### A Preview of Session 2
+
+Some exercises need a few tools that Session 2 covers in depth. Here is the minimum you need today.
+
+**Decisions with `if` / `elif` / `else`**
+
+```python
+average = 85.5
+
+if average >= 90:
+    grade = "A"
+elif average >= 80:
+    grade = "B"
+else:
+    grade = "C or lower"
+
+print(grade)   # B
+```
+
+Python checks the conditions from top to bottom and runs only the first block whose condition is true.
+
+**Repeating with a `for` loop**
+
+```python
+for n in range(1, 10, 4):
+    print(n, n * n)
+# 1 1
+# 5 25
+# 9 81
+```
+
+The indented lines run once per value. `range(start, stop, step)` stops **before** `stop`, so use `range(0, 101, 20)` to include 100.
+
+> Go to **Exercise 4 (Temperature Converter with Type Hints)**, where you will write small functions that call each other and print a conversion table with a loop.
+
+**Lists, tuples and built-in functions**
+
+```python
+scores = [90, 85, 92]           # list: values in order
+print(len(scores), sum(scores), max(scores))   # 3 267 92
+
+student = ("Alice", [90, 85])   # tuple: a fixed group
+name, marks = student           # unpack it
+print(name, marks)              # Alice [90, 85]
+
+students = [("Alice", [90, 85]), ("Bob", [78, 81])]
+for name, marks in students:
+    print(name, sum(marks) / len(marks))
+# Alice 87.5
+# Bob 79.5
+```
+
+`len()`, `sum()` and `max()` count, add up and find the largest item of a list.
+
+**Cleaning and formatting text**
+
+```python
+text = "  Hello World  "
+print(text.strip().lower())   # hello world
+
+amount = 1234.5
+print(f"${amount:,.2f}")      # $1,234.50
+```
+
+`.strip()` removes surrounding spaces, `.lower()` converts to lowercase, and the format spec `:,.2f` adds thousands separators and two decimals.
+
+> Go to **Exercise 5 (Student Grade Functions)**, where you will combine functions, `if`/`elif`, lists of tuples and built-ins into a grading utility.
 
 ---
 
@@ -496,8 +599,9 @@ ie-python-course/
 ├── .python-version
 ├── README.md
 ├── pyproject.toml
+├── main.py                  # Entry point: uv run main.py
 ├── src/
-│   ├── __init__.py          # Makes src/ a Python package
+│   ├── __init__.py          # Makes src/ a package (can be empty)
 │   ├── calculator.py        # Your module with functions
 │   └── utils.py             # Helper/utility functions
 ├── tests/
@@ -508,9 +612,11 @@ ie-python-course/
     └── warmup.ipynb
 ```
 
-### The `src/` Layout
+`main.py` stays at the project root, and your modules live in `src/`, a package folder (a folder with an `__init__.py` file).
 
-Instead of putting all code in `main.py`, organize it into modules inside a `src/` folder:
+### Modules in a `src/` Package
+
+Instead of putting all code in `main.py`, organize it into modules inside a package folder named `src/`:
 
 ```python
 # src/calculator.py
@@ -530,8 +636,10 @@ def subtract(a: float, b: float) -> float:
 from src.calculator import add, subtract
 
 result = add(10, 5)
-print(f"10 + 5 = {result}")
+print(f"10 + 5 = {result}")   # 10 + 5 = 15
 ```
+
+> Run it from the project root with `uv run main.py`, so Python can find `src`. This simple course convention is not the official PyPA *src layout*, where `src/` holds an installable package such as `src/my_project/`.
 
 ### The `README.md` File
 
@@ -608,49 +716,47 @@ $ git branch -M main
 $ git push -u origin main
 ```
 
-This is the foundation you will build on for the entire course.
+On Windows PowerShell, `touch` does not exist: use `New-Item src/__init__.py` or create the empty file in VS Code. This is the foundation you will build on for the entire course.
 
-> Go to **Exercise 6 (Modular Code & Git Workflow)** where you will set up a complete project from scratch, write modular code, and push it to GitHub.
+> Go to **Exercise 6 (Modular Code & Git Workflow)**, where you will set up a complete project from scratch, write modular code, and push it to GitHub.
 
 ---
 
 ## Quick Reference Cheat Sheet
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  UV COMMANDS                                          │
-│    uv init <name>          Create a new project       │
-│    uv add <pkg>            Add a dependency            │
-│    uv remove <pkg>         Remove a dependency         │
-│    uv run script.py        Run inside the venv         │
-│    uv sync                 Install from lock file      │
-│                                                        │
-│  GIT COMMANDS                                          │
-│    git status              See what changed             │
-│    git add .               Stage all changes            │
-│    git commit -m "msg"     Save a snapshot              │
-│    git push origin main    Upload to GitHub             │
-│    git pull origin main    Download from GitHub         │
-│    git log --oneline       View commit history          │
-│                                                        │
-│  PYTHON BASICS                                         │
-│    variable = value        Assignment                   │
-│    print(f"text {var}")    Formatted output             │
-│    input("prompt")         Read user input (→ str)      │
-│    int()  float()  str()   Type conversion              │
-│                                                        │
-│  FUNCTIONS                                             │
-│    def name(param: type) -> return_type:                │
-│        """Docstring."""                                 │
-│        return result                                   │
-│                                                        │
-│  PROJECT STRUCTURE                                     │
-│    pyproject.toml          Project config               │
-│    src/                    Your Python modules          │
-│    main.py                 Entry point                  │
-│    .gitignore              Files Git should ignore      │
-│    README.md               Project documentation        │
-└──────────────────────────────────────────────────────┘
+UV COMMANDS
+  uv init <name>          Create a new project
+  uv add <pkg>            Add a dependency
+  uv remove <pkg>         Remove a dependency
+  uv run script.py        Run inside the venv
+  uv sync                 Install from lock file
+
+GIT COMMANDS
+  git status              See what changed
+  git add .               Stage all changes
+  git commit -m "msg"     Save a snapshot
+  git push origin main    Upload to GitHub
+  git pull origin main    Download from GitHub
+  git log --oneline       View commit history
+
+PYTHON BASICS
+  variable = value        Assignment
+  print(f"text {var}")    Formatted output
+  input("prompt")         Read user input (→ str)
+  int()  float()  str()   Type conversion
+
+FUNCTIONS
+  def name(param: type) -> return_type:
+      """Docstring."""
+      return result
+
+PROJECT STRUCTURE
+  pyproject.toml          Project config
+  src/                    Your Python modules
+  main.py                 Entry point
+  .gitignore              Files Git should ignore
+  README.md               Project documentation
 ```
 
 ---

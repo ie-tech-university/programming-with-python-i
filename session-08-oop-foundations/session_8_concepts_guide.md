@@ -40,7 +40,7 @@ print(dog1.name)   # Milo
 print(dog2.name)   # Luna
 ```
 
-> Go to **Exercise 1 (Student Grade Tracker OOP)** where you will create `Student` objects with attributes and methods.
+> Go to **Exercise 1 (Student Grade Tracker OOP)**, where you will create `Student` objects with attributes and methods.
 
 ---
 
@@ -61,7 +61,7 @@ print(alice.scores)    # [90, 85, 92]
 
 ### What is `self`?
 
-`self` refers to the specific object calling the method.
+`self` is the object the method was called on. In `Student("Alice")` it is the new object being set up; in `s1.average()` it is `s1`.
 
 ```python
 class Student:
@@ -91,6 +91,40 @@ t = Task("Read chapter 8")
 print(t.done)   # False
 ```
 
+### Default Lists: Use `None`, Not `[]`
+
+A default value is created **once**, when Python reads the `def` line, not each time the function is called. With `scores=[]`, every object created without scores **shares the same list**.
+
+Wrong: one list for everybody
+
+```python
+class BadStudent:
+    def __init__(self, name, scores=[]):  # shared!
+        self.name = name
+        self.scores = scores
+
+a = BadStudent("Ana")
+a.scores.append(95)
+b = BadStudent("Ben")
+print(b.scores)   # [95]  Ben got Ana's score
+```
+
+Right: `None`, then a fresh list per object
+
+```python
+class Student:
+    def __init__(self, name, scores=None):
+        self.name = name
+        self.scores = scores if scores is not None else []
+
+a = Student("Ana")
+a.scores.append(95)
+b = Student("Ben")
+print(b.scores)   # []
+```
+
+> Go to **Exercise 1 (Student Grade Tracker OOP)**, where `Student(name, scores=None)` uses this pattern.
+
 > You will use `__init__()` in **every exercise** this session.
 
 ---
@@ -106,11 +140,16 @@ class Student:
         self.scores = scores
 
     def average(self):
+        if not self.scores:
+            return 0
         return sum(self.scores) / len(self.scores)
 
 alice = Student("Alice", [90, 85, 92])
-print(alice.average())   # 89.0
+print(alice.average())                   # 89.0
+print(Student("Charlie", []).average())  # 0
 ```
+
+Guard the edge cases: a student with no scores yet would make `len(self.scores)` zero and raise `ZeroDivisionError`, so `average()` returns 0 instead.
 
 ### Methods Can Modify State
 
@@ -137,13 +176,15 @@ class Student:
         self.scores = scores
 
     def average(self):
+        if not self.scores:
+            return 0
         return sum(self.scores) / len(self.scores)
 
     def is_passing(self):
         return self.average() >= 60
 ```
 
-> Go to **Exercise 3 (Budget Ledger OOP)** where methods will update and summarize stored transactions.
+> Go to **Exercise 3 (Budget Ledger OOP)**, where methods will update and summarize stored transactions.
 
 ---
 
@@ -179,12 +220,23 @@ Python does not enforce strict private fields like some other languages, but a l
 ```python
 class Counter:
     def __init__(self):
-        self._count = 0
+        self._count = 0     # internal
+
+    def increment(self):
+        self._count += 1
+
+    def value(self):
+        return self._count
+
+clicks = Counter()
+clicks.increment()
+clicks.increment()
+print(clicks.value())   # 2
 ```
 
-This is a convention, not a hard rule.
+This is a convention, not a hard rule. Code outside the class should use the methods (`increment()`, `value()`) instead of touching `_count` directly.
 
-> In **Exercise 2 (Contact Book OOP)**, you will encapsulate contact operations inside a `ContactBook` class.
+> Go to **Exercise 2 (Contact Book Refactor)**, where you will encapsulate contact operations inside a `ContactBook` class.
 
 ---
 
@@ -210,7 +262,7 @@ for student in students:
 You can store objects in:
 - lists
 - dictionaries
-- sets (if hashable)
+- sets (objects are hashable by default; a class that defines `__eq__` without `__hash__` is not)
 - nested structures
 
 ### Dictionary of Objects
@@ -224,7 +276,7 @@ contacts = {
 
 This is a powerful pattern: use a dictionary for fast lookup, but store full objects as the values.
 
-> Go to **Exercise 2 (Contact Book OOP)** where a dictionary will store `Contact` objects.
+> Go to **Exercise 2 (Contact Book Refactor)**, where a dictionary will store `Contact` objects.
 
 ---
 
@@ -268,7 +320,7 @@ for student in students:
 - The main program becomes cleaner.
 - You can reuse the class in other programs.
 
-> This refactoring idea is central to **Exercise 4 (Procedural to OOP Refactor)**.
+> Go to **Exercise 4 (Procedural to OOP Refactor)**, where you will turn a list-of-dictionaries task manager into `Task` and `TaskList` classes.
 
 ---
 
@@ -276,8 +328,8 @@ for student in students:
 
 When you print an object directly, Python normally shows something like:
 
-```python
-<__main__.Student object at 0x...>
+```text
+<__main__.Student object at 0x7f2fd2d97230>
 ```
 
 You can improve that by defining `__str__()`:
@@ -296,13 +348,34 @@ print(alice)
 ```
 
 Output:
-```python
+```text
 Student(name=Alice, scores=[90, 85, 92])
 ```
 
-This is very useful for debugging and reports.
+### `__repr__()` for Debugging
 
-> You are encouraged to add `__str__()` methods in the later exercises for cleaner output.
+`__str__()` is only used by `print()`, `str()` and f-strings. Lists, dictionaries, the interactive shell and the debugger use `__repr__()`, so `print(students)` still shows `[<__main__.Student object at 0x…>]`. Define both:
+
+```python
+class Student:
+    def __init__(self, name, scores):
+        self.name = name
+        self.scores = scores
+
+    def __str__(self):     # for people: print(), f-strings
+        return f"{self.name}: {self.scores}"
+
+    def __repr__(self):    # for developers: lists, shell, debugger
+        return f"Student({self.name!r}, {self.scores!r})"
+
+alice = Student("Alice", [90, 85])
+print(alice)      # Alice: [90, 85]
+print([alice])    # [Student('Alice', [90, 85])]
+```
+
+By convention, `__repr__()` looks like the code that creates the object (`!r` adds the quotes around strings). If a class defines only `__repr__()`, `print()` uses it too.
+
+> Add these methods in the later exercises for cleaner output.
 
 ---
 
@@ -322,7 +395,9 @@ Avoid forcing OOP into tiny scripts where a simple function would be clearer.
 
 ---
 
-## Common OOP Patterns in This Session
+## 9. Common OOP Patterns in This Session
+
+Three shapes you will meet in the exercises: data + behavior, a manager class, and composition.
 
 ### Pattern 1: Simple Data + Behavior
 
@@ -360,6 +435,8 @@ class GradeBook:
         self.students.append(student)
 ```
 
+> Go to **Exercise 5 (Library Manager Capstone)**, where a `Library` holds `Book` objects and finds, checks out and returns them.
+
 ---
 
 ## Quick Reference Cheat Sheet
@@ -377,18 +454,19 @@ print(p.name)       # attribute access
 print(p.greet())    # method call
 ```
 
-```
-┌──────────────────────────────────────────────────────┐
-│ CLASS              Blueprint for objects             │
-│ OBJECT             Instance of a class               │
-│ __init__()         Initializes object attributes     │
-│ self               Refers to the current object      │
-│ ATTRIBUTE          Variable stored in an object      │
-│ METHOD             Function inside a class           │
-│ ENCAPSULATION      Bundle data + behavior together   │
-│ __str__()          Friendly string representation    │
-│ COMPOSITION        Object stores other objects       │
-└──────────────────────────────────────────────────────┘
+```text
+CLASS              Blueprint for objects
+OBJECT             Instance of a class
+__init__()         Initializes object attributes
+self               The object the method was called on
+ATTRIBUTE          Variable stored in an object
+METHOD             Function inside a class
+DEFAULT LIST       scores=None, then [] inside __init__
+ENCAPSULATION      Bundle data + behavior together
+_name              Internal by convention
+__str__()          Friendly text for print()
+__repr__()         Developer view (lists, shell)
+COMPOSITION        Object stores other objects
 ```
 
 ---

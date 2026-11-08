@@ -3,90 +3,157 @@
 
 Connect to REST APIs, process JSON responses, handle errors and authentication.
 
+> Runnable examples use two free services that need no key: the currency endpoint `https://open.er-api.com/v6/latest/USD` and the course dataset `data/countries.json`. Addresses under `api.example.com` and variables such as `url` are **placeholders**: replace them with an endpoint from your API's documentation.
+
 ---
 
 ## 1. What Is an API?
 
-An **API** (Application Programming Interface) is a contract between two programs. A **REST API** uses HTTP to let you request and send data over the web.
-
-### HTTP Methods
+An **API** (Application Programming Interface) is a contract between two programs. A **REST API** uses HTTP to let you request and send data over the web. The **method** tells the server what kind of action the client wants:
 
 | Method | Purpose | Example |
 |--------|---------|---------|
-| `GET` | Retrieve data | Get currency rates |
-| `POST` | Send new data | Create a transaction |
-| `PUT` | Update data | Edit a profile |
+| `GET` | Read data | A dashboard requests the current exchange rate |
+| `POST` | Send new data | A form sends a new expense record |
+| `PUT` | Replace or update data at a known address | Edit a profile |
 | `DELETE` | Remove data | Delete a record |
+
+These method names are an HTTP convention, not Python keywords; the API documentation says which methods each endpoint accepts. A `GET` should not create or delete data, because tools and users expect it to be safe to repeat.
+
+An API call has two halves. The **request** carries a method, a URL with optional query parameters, headers (for example `Authorization`), an optional JSON body and, on the Python side, a `timeout`. The **response** carries a status code, headers and a body that `.json()` parses. Status codes come in families: `2xx` success, `4xx` a problem with the request (400 bad request, 401, 404, 429 too many requests) and `5xx` a problem on the server. The exceptions to catch where you can respond usefully are `Timeout`, `ConnectionError`, `HTTPError` and their parent `RequestException`.
 
 ---
 
 ## 2. The `requests` Library
 
-**How to read this example:** The request returns a response object; its status and body are separate. Check the status and set a timeout before parsing JSON so network and HTTP failures are explicit.
+One function call sends a request; the `Response` object it returns holds the answer.
+
+### Your First `GET` Request
+
+Install the library in your own project with `uv add requests` (the course project already includes it).
+
+**How to read this example:** `timeout=10` stops waiting after 10 seconds, and `raise_for_status()` turns an HTTP error status into an exception before `.json()` parses the body into a dictionary.
 
 ```python
 import requests
 
-response = requests.get("https://api.exchangerate-api.com/v4/latest/USD")
+url = "https://open.er-api.com/v6/latest/USD"
+response = requests.get(url, timeout=10)
+response.raise_for_status()
+data = response.json()
+
 print(response.status_code)  # 200
-print(response.json())       # dict
+print(data["base_code"])     # USD
+print(data["rates"]["EUR"])  # e.g. 0.895793 (changes daily)
 ```
 
-### Response Object
+> Go to **Exercise 1 (First API Call)**, where you will print the status, the base currency and five rates, and handle request errors.
 
-**How to read this example:** This example applies the concept of Response Object. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+### The `Response` Object
+
+`requests.get()` returns a `Response`; each attribute answers a different question:
+
+- `status_code` / `ok`: the HTTP result (`ok` is `True` below 400).
+- `headers`: metadata such as the content type. It is a `CaseInsensitiveDict`, so `"Content-Type"` and `"content-type"` find the same header.
+- `text`: the raw body as a string.
+- `json()`: the parsed body, a `dict` or a `list` depending on whether the JSON starts with `{` or `[`.
+
+`.json()` raises an error if the body is not JSON (a server may answer with an HTML error page), so check the status first.
 
 ```python
-response.status_code   # int: 200, 404, 500
-response.ok            # bool: True if < 400
-response.text          # str: raw body
-response.json()        # dict: parsed JSON
-response.headers       # dict
+response = requests.get(url, timeout=10)
+print(response.status_code)              # 200
+print(response.ok)                       # True
+print(response.headers["content-type"])  # application/json
+print(response.text[:20])                # {"result":"success",
+data = response.json()
+print(type(data).__name__)               # dict
 ```
 
 ---
 
 ## 3. HTTP Status Codes
 
-| Code | Meaning |
-|------|---------|
-| `200` | OK |
-| `201` | Created |
-| `400` | Bad Request |
-| `401` | Unauthorized |
-| `404` | Not Found |
-| `429` | Rate Limited |
-| `500` | Server Error |
+The first digit gives the family: `2xx` success, `4xx` a problem with the request, `5xx` a problem on the server. `raise_for_status()` turns every `4xx`/`5xx` into a `requests.exceptions.HTTPError`.
+
+| Code | Meaning | What your code should do |
+|------|---------|--------------------------|
+| `200` | OK | Read the body |
+| `201` | Created | A `POST` succeeded; read the new record |
+| `400` | Bad Request | Fix the data or parameters you sent |
+| `401` | Unauthorized | Credentials are missing or invalid |
+| `404` | Not Found | Check the URL or the resource name |
+| `429` | Too Many Requests | Slow down and retry later (section 9) |
+| `500` | Internal Server Error | The server failed; retrying at once may not help |
+
+### Errors Inside a `200` Response
+
+The exact meaning of a code can vary by API, so read its documentation. Some APIs even report errors inside a successful response. The currency API answers an unknown currency with status `200` and a body whose `"result"` is `"error"`:
+
+**How to read this example:** `raise_for_status()` would not complain here, because the HTTP request itself succeeded. Check `data.get("result") == "success"` (or the field your API documents) before using the rates.
+
+```python
+data = requests.get("https://open.er-api.com/v6/latest/XYZ",
+                    timeout=10).json()
+print(data)  # {'result': 'error', 'error-type': 'unsupported-code'}
+```
 
 ---
 
 ## 4. Query Parameters
 
-**How to read this example:** The dictionary passed as `params` becomes encoded URL filters. This asks the server for a narrower result instead of fetching everything and discarding most of it locally.
+Query parameters are small options attached to a URL after `?`. Pass them as a dictionary with `params=` and `requests` builds and encodes the URL for you, including spaces and accented letters.
+
+**How to read this example:** The dictionary becomes `?q=...&limit=10`; `response.url` shows the final address. Use parameters for filters, search terms and pagination documented by the API, so the server sends a subset instead of everything.
 
 ```python
-params = {"country": "ES", "limit": 10}
-response = requests.get("https://api.example.com/data", params=params)
+params = {"q": "San José", "limit": 10}
+response = requests.get("https://api.example.com/events",
+                        params=params, timeout=10)
+print(response.url)
+# https://api.example.com/events?q=San+Jos%C3%A9&limit=10
 ```
+
+`api.example.com` is a placeholder: use your API's real endpoint.
 
 ---
 
 ## 5. Headers & Authentication
 
-**How to read this example:** Headers carry metadata and sometimes credentials. API keys belong in protected environment configuration, and the service docs specify the required authorization format.
+Headers describe the request: the format the client accepts, the content type, or a token proving the client's identity.
+
+Never commit an API key into a script or notebook. Read it from an environment variable and fail visibly when it is missing, instead of silently sending a fake key.
+
+**How to read this example:** The key comes from the environment, not the source code, and the program stops with a clear message if it is absent. The service's documentation defines the exact header format; environment variables still need protecting on the machine that runs the app.
 
 ```python
 import os
-API_KEY = os.environ.get("MY_API_KEY", "your-key")
-headers = {"Authorization": f"Bearer {API_KEY}"}
-response = requests.get(url, headers=headers)
+import requests
+
+api_key = os.environ.get("MY_API_KEY")
+if not api_key:
+    raise RuntimeError("Set the MY_API_KEY environment variable first.")
+
+headers = {"Authorization": f"Bearer {api_key}"}
+response = requests.get(url, headers=headers, timeout=10)
 ```
 
 ---
 
 ## 6. Error Handling
 
-**How to read this example:** A timeout bounds waiting; `raise_for_status()` converts HTTP error responses to exceptions. Separate handlers let the program explain different network failure types.
+Network code can wait forever unless you pass a **timeout**, which bounds the wait and lets the program report the problem. The exceptions you will meet, all in `requests.exceptions`:
+
+- `Timeout`: the server did not answer within the allowed time.
+- `ConnectionError`: no connection could be made or kept, for example no network, an unknown host name, or a refused connection.
+- `HTTPError`: an error status, raised by `raise_for_status()`.
+- `RequestException`: the parent of all of them, for any other request failure.
+
+Catch exceptions only where you can respond usefully. If a function returns `None` after a failure, callers must check for `None` before using the result; otherwise the failure resurfaces later as a less clear error.
+
+### A Reusable `fetch_data()` Function
+
+**How to read this example:** The timeout bounds waiting, `raise_for_status()` converts error statuses into `HTTPError`, and each handler prints a message that tells the user what actually went wrong. Every failure path returns `None`.
 
 ```python
 def fetch_data(url, params=None):
@@ -95,197 +162,217 @@ def fetch_data(url, params=None):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.Timeout:
-        print("Timed out")
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error: {e.response.status_code}")
+        print("The server did not respond in time.")
+    except requests.exceptions.HTTPError as exc:
+        print(f"HTTP error: {exc.response.status_code}")
     except requests.exceptions.ConnectionError:
-        print("No internet")
-    except requests.exceptions.RequestException as e:
-        print(f"Error: {e}")
+        print("Could not connect: check the network and the host name.")
+    except requests.exceptions.RequestException as exc:
+        print(f"Request failed: {exc}")
     return None
+
+rates = fetch_data("https://open.er-api.com/v6/latest/USD")
+print(rates["base_code"])  # USD
+fetch_data("https://no-such-host.invalid/data")
+# Could not connect: check the network and the host name.
 ```
+
+> Go to **Exercise 2 (Currency Converter)**, where you will wrap a rate request in this kind of error handling and return `None` when the conversion fails.
 
 ---
 
 ## 7. Navigating JSON Responses
 
-**How to read this example:** JSON objects become dictionaries and arrays become lists. Direct indexing expects a required key; `.get()` is appropriate for optional keys, but avoid defaults that could be mistaken for valid essential data.
+JSON objects become dictionaries and JSON arrays become lists, so you navigate a response with keys and indexes.
+
+**How to read this example:** Direct indexing suits **required** keys: a missing key raises `KeyError`. `.get()` suits **optional** keys; the default `{}` keeps the second lookup working when `"rates"` is absent. Check for `None` instead of inventing a value.
 
 ```python
-data = response.json()
-rate = data["rates"]["EUR"]
-safe = data.get("rates", {}).get("CAD", "N/A")
-for currency, rate in data["rates"].items():
-    print(f"1 USD = {rate} {currency}")
+data = {
+    "base_code": "USD",
+    "rates": {"EUR": 0.9, "GBP": 0.76, "JPY": 153.2},
+}
+
+eur_rate = data["rates"]["EUR"]    # required: KeyError if missing
+print(eur_rate)                    # 0.9
+
+rates = data.get("rates", {})      # optional: {} if missing
+cad_rate = rates.get("CAD")
+if cad_rate is None:
+    print("No CAD rate in this response.")
+# No CAD rate in this response.
+
+for currency, value in rates.items():
+    print(f"1 USD = {value} {currency}")
+# 1 USD = 0.9 EUR
+# 1 USD = 0.76 GBP
+# 1 USD = 153.2 JPY
 ```
+
+Avoid plausible-looking fallbacks for essential data: a missing rate replaced by `0` or `"N/A"` would break a financial calculation silently.
+
+### Lists of Records and Nested Fields
+
+Many APIs return a **list** of records, each with nested dictionaries and lists. The course countries dataset is a list where `name` is a dictionary and `capital` is a list that can be empty.
+
+**How to read this example:** Loop over the list, chain keys to reach nested values (`country["name"]["common"]`), and guard fields that may be empty before indexing them with `[0]`.
+
+```python
+countries = [  # same shape as the course countries.json
+    {"name": {"common": "Portugal", "official": "Portuguese Republic"},
+     "capital": ["Lisbon"], "region": "Europe", "population": 10804871},
+    {"name": {"common": "Macau", "official": "Macao SAR of China"},
+     "capital": [], "region": "Asia", "population": 685900},
+]
+print(type(countries).__name__)  # list
+
+for country in countries:
+    name = country["name"]["common"]
+    capitals = country.get("capital") or ["no capital listed"]
+    print(f"{name}: {capitals[0]}")
+# Portugal: Lisbon
+# Macau: no capital listed
+```
+
+> Go to **Exercise 3 (Country Data Fetcher)**, where you will search this list for a country by name and return its capital, population and region.
 
 ---
 
 ## 8. Caching API Responses
 
-**How to read this example:** This example applies the concept of 8. Caching API Responses. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+Calling the same endpoint again and again wastes time and can get you blocked. A cache saves a response to a file and reuses it while it is fresh.
+
+**How to read this example:** The file's modification time gives its age. The cache stores the URL next to the data, so a file written for USD is never returned for EUR. Only a successful fetch is saved, so a failure never overwrites good cached data. `fetch_data()` is the function from section 6.
 
 ```python
-import json, os, time
+import json
+import os
+import time
 
 def cached_fetch(url, cache_file, max_age=3600):
     if os.path.exists(cache_file):
-        if time.time() - os.path.getmtime(cache_file) < max_age:
-            with open(cache_file) as f:
-                return json.load(f)
-    data = fetch_data(url)
-    if data:
-        with open(cache_file, "w") as f:
-            json.dump(data, f, indent=2)
+        age = time.time() - os.path.getmtime(cache_file)
+        if age < max_age:
+            with open(cache_file, encoding="utf-8") as f:
+                cached = json.load(f)
+            if cached.get("url") == url:  # same request?
+                return cached["data"]
+    data = fetch_data(url)  # the function from section 6
+    if data is not None:    # never overwrite with a failure
+        with open(cache_file, "w", encoding="utf-8") as f:
+            json.dump({"url": url, "data": data}, f, indent=2)
     return data
+
+base = "https://open.er-api.com/v6/latest/"
+usd = cached_fetch(base + "USD", "api_cache.json")
+eur = cached_fetch(base + "EUR", "api_cache.json")
+print(usd["base_code"], eur["base_code"])  # USD EUR
 ```
+
+### Caching: Save Work, but Define Freshness
+
+A cache makes a dashboard faster and reduces the number of requests sent to an API. The right `max_age` depends on the data: a currency rate that changes during the day should not be cached indefinitely; a list of country names may be safe to cache for much longer.
+
+For a reliable cache, also decide what happens when the cache file is malformed, and whether stale data should be used when the network is unavailable. Stale results can be better than no result for some applications, but financial or safety-sensitive decisions may require fresh data.
+
+> Go to **Exercise 4 (API Caching)**, where you will build `cached_fetch()` yourself and check that a second call reuses the saved response.
 
 ---
 
-## 9. POST Requests
+## 9. Rate Limits and Retries
 
-**How to read this example:** The request returns a response object; its status and body are separate. Check the status and set a timeout before parsing JSON so network and HTTP failures are explicit.
+Most APIs limit how many requests a client may send per minute or per day. Over the limit, the server answers `429 Too Many Requests`, often with a `Retry-After` header saying how many seconds to wait.
+
+**How to read this example:** On a `429` the function waits and tries again, at most `max_attempts` times. It uses `Retry-After` when it is a number of seconds; otherwise it **backs off**, doubling the wait each time (2 s, 4 s, …). Any other status goes through `raise_for_status()` as usual.
+
+```python
+import time
+import requests
+
+def get_with_retry(url, max_attempts=3):
+    for attempt in range(1, max_attempts + 1):
+        response = requests.get(url, timeout=10)
+        if response.status_code != 429:
+            response.raise_for_status()
+            return response.json()
+        if attempt == max_attempts:
+            break
+        retry_after = response.headers.get("Retry-After", "")
+        wait = int(retry_after) if retry_after.isdigit() else 2 ** attempt
+        print(f"429 Too Many Requests: waiting {wait} s")
+        time.sleep(wait)
+    raise RuntimeError("Still rate limited; try again later.")
+
+# Server answers 429 with "Retry-After: 1" twice, then 200:
+data = get_with_retry(url)
+# 429 Too Many Requests: waiting 1 s
+# 429 Too Many Requests: waiting 1 s
+```
+
+The best defense is not to hit the limit: cache responses (section 8) and never call an API inside a tight loop.
+
+---
+
+## 10. POST Requests
+
+With `json=`, `requests` serializes a Python dictionary as JSON and sets the `Content-Type` header. A `POST` needs a timeout just like a `GET`.
+
+**How to read this example:** The status `201` means the server created the record. Read the returned body for server-generated information, such as the new `id`, instead of assuming it equals what you sent.
 
 ```python
 new_item = {"name": "Widget", "price": 9.99}
-response = requests.post(url, json=new_item, headers=headers)
-if response.status_code == 201:
-    print(f"Created: {response.json()}")
+response = requests.post(url, json=new_item,
+                         headers=headers, timeout=10)
+response.raise_for_status()
+print(response.status_code)  # 201
+created_item = response.json()
+print(created_item["id"])    # e.g. 101 (assigned by the server)
 ```
+
+The server decides which fields are required and may return a normalized record or validation details. Do not send private information unless the service is trusted and the connection is protected (HTTPS).
 
 ---
 
-## Quick Reference
+## 11. A Real API Workflow
 
-**How to read this example:** This block collects common request options and response properties as an index; use the surrounding examples to choose the correct options for a particular API.
+APIs are useful only when you treat them as unreliable systems.
 
-```
-INSTALL     uv add requests
-GET         requests.get(url, params=, headers=, timeout=)
-POST        requests.post(url, json=, headers=)
-RESPONSE    .status_code  .ok  .json()  .text
-ERRORS      try/except RequestException
-AUTH        headers={"Authorization": "Bearer TOKEN"}
-CACHE       Save .json() to file, check mtime
-```
+### From the Happy Path to Robust Code
 
----
+APIs are not magical: they are networked interfaces that return data in a predictable format. The main challenge is handling uncertainty. A first version often covers only the happy path:
 
-
----
-
-## 10. Working with Real APIs Like a Professional
-
-APIs are useful only when you treat them as unreliable systems. Requests can fail, responses can be slow, and data can change shape without warning.
-
-### Better Request Pattern
-
-**How to read this example:** This example applies the concept of Better Request Pattern. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+**How to read this example:** Send a GET, check the status, parse the JSON and select the EUR rate. This works when the network is healthy and the response is exactly what we expect.
 
 ```python
 import requests
 
-try:
-    response = requests.get("https://api.example.com/data", timeout=10)
-    response.raise_for_status()
-    payload = response.json()
-except requests.exceptions.Timeout:
-    print("The server did not respond in time.")
-except requests.exceptions.HTTPError as exc:
-    print(f"Request failed with status {exc.response.status_code}")
-except requests.exceptions.RequestException as exc:
-    print(f"Unexpected request error: {exc}")
-```
-
-### Why This Matters
-
-A production-quality script should:
-- fail gracefully when the API is down
-- handle missing or empty JSON calmly
-- avoid re-fetching API data too often
-- keep secrets out of source code
-
-> Go to **Exercise 6 (Cached Currency Lookup)** to practice a stronger, more realistic API workflow.
-
----
-
-## 11. Caching and Rate Limits
-
-When you repeatedly call the same endpoint, you can waste time and get blocked. A simple cache can help:
-
-**How to read this example:** The age check avoids another network call while the saved response remains fresh. After expiry, fetch an updated response; choose the lifetime based on how quickly the source data changes, and do not replace good cached data with a failed response.
-
-```python
-import json, os, time
-
-CACHE_FILE = "cache.json"
-
-if os.path.exists(CACHE_FILE):
-    age = time.time() - os.path.getmtime(CACHE_FILE)
-    if age < 3600:
-        with open(CACHE_FILE) as f:
-            data = json.load(f)
-```
-
-This is not a trick — it is a real-world engineering pattern.
-
----
-
-## 12. Data Safety and API Design
-
-When working with JSON, always confirm the structure before accessing nested values:
-
-**How to read this example:** The chained dictionary lookups navigate from the rates object to one currency value. `.get()` handles optional keys, while required values should fail clearly rather than silently becoming plausible but incorrect numbers.
-
-```python
-rates = data.get("rates", {})
-currency = rates.get("EUR", "N/A")
-```
-
-Use `.get()` when a field may be missing. This avoids a common `KeyError` and makes the code more resilient.
-
-
----
-
-## Deep Dive: A Real API Workflow
-
-The most important idea in this session is that APIs are not magical. They are just networked interfaces that return data in a predictable format. The main challenge is handling uncertainty.
-
-A common real-world workflow looks like this:
-
-**How to read this example:** The first request demonstrates the happy path: send GET, check status, parse JSON, and select the EUR rate. The second adds a timeout and exception handling because network availability and response status cannot be assumed.
-
-```python
-import requests
-
-response = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10)
+url = "https://open.er-api.com/v6/latest/USD"
+response = requests.get(url, timeout=10)
 response.raise_for_status()
 
 payload = response.json()
-print(payload["rates"]["EUR"])
+print(payload["rates"]["EUR"])  # e.g. 0.895793
 ```
 
-This works when the network is healthy and the response is exactly what we expect. But real code must also handle:
+But real code must also handle slow servers, bad connections, server-side errors, rate limits and missing keys in the JSON.
 
-- slow servers
-- missing keys in JSON
-- rate limits
-- bad connections
-- server-side errors
+A more robust version:
 
-A more robust version is:
-
-**How to read this example:** The first request demonstrates the happy path: send GET, check status, parse JSON, and select the EUR rate. The second adds a timeout and exception handling because network availability and response status cannot be assumed.
+**How to read this example:** The same request now fails politely: a timeout, an HTTP error or any other request problem prints a clear message, and a missing EUR rate is reported instead of crashing with `KeyError` or printing a fake value.
 
 ```python
 import requests
 
+url = "https://open.er-api.com/v6/latest/USD"
 try:
-    response = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10)
+    response = requests.get(url, timeout=10)
     response.raise_for_status()
     data = response.json()
-    rate = data.get("rates", {}).get("EUR", "N/A")
-    print(f"1 USD = {rate} EUR")
+    eur_rate = data.get("rates", {}).get("EUR")
+    if eur_rate is None:
+        print("The response has no EUR rate.")
+    else:
+        print(f"1 USD = {eur_rate} EUR")  # e.g. 1 USD = 0.895793 EUR
 except requests.exceptions.Timeout:
     print("The API did not respond in time.")
 except requests.exceptions.HTTPError as exc:
@@ -294,148 +381,46 @@ except requests.exceptions.RequestException as exc:
     print(f"Something went wrong: {exc}")
 ```
 
-This kind of defensive programming is essential. The user experience is much better when your app fails politely instead of crashing in the middle of a report.
+The user experience is much better when your app fails politely instead of crashing in the middle of a report.
 
+### Why This Matters
+
+A production-quality script should:
+- fail gracefully when the API is down
+- handle missing or empty JSON calmly
+- avoid re-fetching API data too often, and back off on `429`
+- keep secrets out of source code
+
+> Go to **Exercise 5 (Multi-Currency Report)**, where you will group transactions by their original currency and compare them through EUR totals.
+
+> Go to **Exercise 6 (Cached Currency Lookup)**, where you will combine a timeout, error handling and a per-currency cache in one function.
 
 ---
 
-## Understanding Each Part of an API Request
+## Where to Practice: the Exercises
 
-An API request is a message sent from a client program to a server. The server interprets the message, performs an operation, and sends a response. Learning the parts of that exchange makes the `requests` examples much easier to adapt.
+- Exercise 1 (First API Call)
+- Exercise 2 (Currency Converter)
+- Exercise 3 (Country Data Fetcher)
+- Exercise 4 (API Caching)
+- Exercise 5 (Multi-Currency Report)
+- Exercise 6 (Cached Currency Lookup)
 
-### HTTP Methods Describe the Intended Operation
+---
 
-The method tells the server what kind of action the client wants:
+## Quick Reference
 
-- `GET` asks to read information. For example, a dashboard can request the current exchange rate.
-- `POST` submits new information. For example, a form can send a new expense record.
-- `PUT` commonly replaces or updates a resource at a known address.
-- `DELETE` asks to remove a resource.
+**How to read this example:** This block collects common request options and response properties as an index; use the sections above to choose the correct options for a particular API.
 
-These method names are a convention, not Python keywords. The API documentation defines which methods a particular endpoint accepts. A `GET` should generally not be used to create or delete data because tools and users expect it to be safe to repeat.
-
-### A Response Has More Than a Status Code
-
-`requests.get()` returns a `Response` object. Its fields answer different questions:
-
-- `status_code` tells you the HTTP result, such as `200` or `404`.
-- `headers` contains metadata, such as the content type or rate-limit information.
-- `text` provides the response body as text.
-- `json()` parses a JSON body into Python dictionaries, lists, strings, numbers, booleans, or `None`.
-
-Calling `.json()` does not guarantee the response is valid JSON. A server might return an HTML error page, so JSON decoding can fail even if an HTTP request reached the server. Check the status and know the response format before treating it as the expected data structure.
-
-**How to read this example:** The response exposes different information: status and `ok` describe HTTP success, `text` is the raw body, `json()` parses structured data, and headers contain metadata. These properties help diagnose whether the problem is the HTTP result or body format.
-
-```python
-response = requests.get(url, timeout=10)
-response.raise_for_status()  # Raises HTTPError for unsuccessful status codes
-data = response.json()       # Parse the body after checking the HTTP result
 ```
-
-### Status Codes Tell You What Happened
-
-Status codes are grouped by their first digit. For this course, the most useful distinction is between successful responses (`2xx`), client-side problems (`4xx`), and server-side problems (`5xx`).
-
-- `200` means the request succeeded and often includes the requested data.
-- `201` means a resource was created, which is a common response to a successful `POST`.
-- `400` means the request was not acceptable as sent; the client may need to correct its input.
-- `401` means authentication is missing or invalid.
-- `404` means the requested resource or route was not found.
-- `429` means the client is making requests too quickly and should respect the API's rate limits.
-- `500` indicates a server-side failure; retrying immediately may not help.
-
-The exact meaning can vary slightly by API, so use its documentation. `raise_for_status()` converts unsuccessful HTTP results into a `requests.exceptions.HTTPError`, making them straightforward to handle.
-
-### Query Parameters Narrow a Request
-
-Query parameters are small options attached to a URL. `requests` builds and encodes them safely when you pass a dictionary with `params=`:
-
-**How to read this example:** The parameter dictionary becomes URL query values, asking the server for a country and limited results. Server-side filtering reduces downloaded data, and `params` safely encodes the query instead of manually constructing a URL.
-
-```python
-params = {"country": "ES", "limit": 10}
-response = requests.get("https://api.example.com/events", params=params)
+INSTALL    uv add requests
+GET        requests.get(url, params=, headers=, timeout=10)
+POST       requests.post(url, json=, headers=, timeout=10)
+CHECK      response.raise_for_status()    4xx/5xx -> HTTPError
+RESPONSE   .status_code  .ok  .headers  .text  .json()
+ERRORS     Timeout  ConnectionError  HTTPError  RequestException
+AUTH       headers={"Authorization": f"Bearer {api_key}"}
+JSON       data["required"]   data.get("optional")  -> None
+CACHE      save {"url", "data"}; reuse while mtime is fresh
+429        wait Retry-After seconds (or 2, 4, 8 s...), retry
 ```
-
-This asks for a subset of events rather than downloading everything and filtering it locally. Use query parameters for filters, search terms, pagination, and other options documented by the API. Passing a dictionary also handles characters such as spaces more reliably than manually concatenating a URL.
-
-### Headers Carry Metadata and Credentials
-
-Headers describe the request. They can tell a server which format the client accepts, identify the content type, or provide a token proving the client's identity.
-
-An API key should not be committed into a script or notebook. Read it from an environment variable and fail visibly when the required setting is missing:
-
-**How to read this example:** The credential comes from environment configuration rather than source code, reducing the risk of committing a secret. The missing-key check fails visibly; the API documentation determines the exact authorization header format.
-
-```python
-import os
-
-api_key = os.environ.get("MY_API_KEY")
-if not api_key:
-    raise RuntimeError("Set the MY_API_KEY environment variable first.")
-
-headers = {"Authorization": f"Bearer {api_key}"}
-```
-
-The exact header format is defined by the service. Environment variables keep credentials out of source control, but they still need to be protected in the machine or deployment environment where the application runs.
-
-### JSON Is a Nested Data Structure
-
-JSON objects become Python dictionaries; JSON arrays become Python lists. That means you can use dictionary keys and list indexes to navigate the response:
-
-**How to read this example:** The sample dictionary mirrors nested JSON: the outer key selects rates, and the inner key selects a currency. Direct indexing is concise for required fields; `.get()` can handle optional fields, but missing values still need a deliberate policy.
-
-```python
-data = {
-    "base": "USD",
-    "rates": {"EUR": 0.92, "CAD": 1.36},
-}
-
-print(data["rates"]["EUR"])  # 0.92
-```
-
-Direct indexing is appropriate when the key is required and a missing value should be treated as an error. `.get()` is useful for optional fields:
-
-**How to read this example:** The sample dictionary mirrors nested JSON: the outer key selects rates, and the inner key selects a currency. Direct indexing is concise for required fields; `.get()` can handle optional fields, but missing values still need a deliberate policy.
-
-```python
-rates = data.get("rates", {})
-cad_rate = rates.get("CAD")
-```
-
-The default `{}` ensures the second lookup still operates on a dictionary when `"rates"` is absent. Avoid using a plausible-looking fallback for essential data: silently returning `0` for a missing exchange rate could produce an incorrect financial calculation.
-
-### Timeouts and Exceptions Make Network Code Predictable
-
-Network operations can wait indefinitely unless a timeout is specified. A timeout places a bound on how long the program waits and lets it recover or report the problem.
-
-- A `Timeout` indicates the server did not respond within the allowed time.
-- A `ConnectionError` indicates the client could not establish or maintain a connection.
-- An `HTTPError` indicates an HTTP error status after `raise_for_status()`.
-- The parent `RequestException` covers other request-related failures.
-
-Catch exceptions only where the application can provide a useful response. If a function returns `None` after a failure, callers must check for it before using the result; otherwise the failure may simply become a less clear error later.
-
-### Caching: Save Work, but Define Freshness
-
-A cache stores a previous response so the application can reuse it instead of making a new network request. This can make a dashboard faster and reduce the number of requests sent to an API.
-
-The file modification time is a simple freshness rule: calculate how many seconds have passed since the cache was written, then reuse it only if that age is below `max_age`. The right duration depends on the data. A currency rate that changes during the day should not be cached indefinitely; a list of country names may be safe to cache for much longer.
-
-For a reliable cache, also consider malformed cache files, whether the cache belongs to the requested URL and parameters, and whether stale data should be used when the network is unavailable. These are design decisions: stale results can be better than no result for some applications, but financial or safety-sensitive decisions may require fresh data.
-
-### POST: Submit Structured Data
-
-With `json=`, `requests` serializes a Python dictionary as JSON and sets an appropriate content type:
-
-**How to read this example:** The dictionary is encoded as a JSON request body with `json=`, and the status indicates whether the server created the resource. Parse the returned body for server-generated information such as an identifier instead of assuming it equals the submission.
-
-```python
-new_item = {"name": "Widget", "price": 9.99}
-response = requests.post(url, json=new_item, timeout=10)
-response.raise_for_status()
-created_item = response.json()
-```
-
-The server decides which fields are required and whether the submitted values are valid. A successful status code does not remove the need to inspect the response: the server may return an identifier, a normalized version of the record, or additional validation details. Do not send private information unless the service is trusted and the connection is appropriately protected.

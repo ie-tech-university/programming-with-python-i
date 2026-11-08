@@ -41,7 +41,7 @@ data/records.json  ·  exports/*.csv  ·  data/backups/*.json
 | Area | Required | Optional, extra credit | Not accepted as a replacement |
 |---|---|---|---|
 | **Project** | `uv` project with `pyproject.toml`, Git repository on GitHub | tests with `unittest` or `pytest` | a loose `.py` file or a notebook |
-| **Interface** | command-line interface with `argparse` subcommands | an interactive menu as a second mode, coloured output | a GUI or a website (that comes in Sessions XV–XVIII) |
+| **Interface** | command-line interface with `argparse` subcommands | an interactive menu as a second mode, colored output | a GUI or a website (that comes in Sessions XV–XVIII) |
 | **Data** | JSON file as the store, CSV export or import | importing a messy CSV with a cleaning report | a database, or data that disappears when the program ends |
 | **Libraries** | the **standard library** only (`json`, `csv`, `re`, `pathlib`, `datetime`, `argparse`, `statistics`…) | — | `pandas`, `requests`, `flask` or any third-party library in the core logic |
 
@@ -133,7 +133,7 @@ Your tool must let the user:
 - **Tests** for validators and reports (`unittest` or `pytest`).
 - **Import a messy CSV** and print a cleaning report (rows read, fixed, rejected, duplicates removed).
 - **Statistics** with the `statistics` module (median, mean, standard deviation) in your reports.
-- **ASCII charts** in the terminal (bars made of `█`) or coloured output.
+- **ASCII charts** in the terminal (bars made of `█`) or colored output.
 - An **interactive menu mode** next to the subcommands, or **undo** of the last change.
 - A **scheduled run** with cron or Task Scheduler (for example a daily reminder).
 - A **config file** (JSON) for settings such as currency, default categories or file paths.
@@ -146,7 +146,7 @@ A common layout and a tested starting point, so that you spend your time on your
 
 ### The folder layout
 
-Create the project with `uv init --package your-tool` and organise it like this:
+Create the project with `uv init --package your-tool` and organize it like this:
 
 ```text
 your-tool/
@@ -228,7 +228,7 @@ def main() -> None:
 
 ### Skeleton: a hierarchy you can save
 
-The base class holds the data and the behaviour every plant shares:
+The base class holds the data and the behavior every plant shares:
 
 ```python
 from datetime import date, timedelta
@@ -267,14 +267,14 @@ The trick for saving different subclasses in one JSON file is to store a `kind` 
         return bool(name.strip()) and len(name.strip()) <= 40
 ```
 
-Subclasses change the defaults and override behaviour, so the same `describe()` call gives different results:
+Subclasses change the defaults and override behavior, so the same `describe()` call gives different results:
 
 ```python
 class Succulent(Plant):
     kind = "succulent"
     default_every = 14
 
-    def describe(self) -> str:  # override: same call, different behaviour
+    def describe(self) -> str:  # override: same call, different behavior
         return super().describe() + " (let the soil dry out)"
 
 

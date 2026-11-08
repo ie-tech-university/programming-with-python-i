@@ -19,12 +19,12 @@ text = "Hello,   World!   Welcome to   Python."
 
 # Replace substrings
 clean = text.replace("   ", " ")
-print(clean)   # "Hello, World! Welcome to Python."
+print(clean)   # Hello, World! Welcome to Python.
 
 # Chain multiple replacements
 phone = "(555) 123-4567"
 digits_only = phone.replace("(", "").replace(")", "").replace("-", "").replace(" ", "")
-print(digits_only)   # "5551234567"
+print(digits_only)   # 5551234567
 ```
 
 ### Splitting and Joining Strings
@@ -44,11 +44,11 @@ print(clean_fields)   # ['Alice', '25', 'Madrid', 'alice@email.com']
 # Joining
 words = ["Python", "is", "awesome"]
 sentence = " ".join(words)
-print(sentence)   # "Python is awesome"
+print(sentence)   # Python is awesome
 
 # Join with a different separator
 csv_output = ",".join(clean_fields)
-print(csv_output)   # "Alice,25,Madrid,alice@email.com"
+print(csv_output)   # Alice,25,Madrid,alice@email.com
 ```
 
 ### The Split-Clean-Join Pattern
@@ -60,7 +60,7 @@ messy = "   Hello    World    from     Python   "
 
 # Split on any whitespace (default), then rejoin with single spaces
 clean = " ".join(messy.split())
-print(clean)   # "Hello World from Python"
+print(clean)   # Hello World from Python
 ```
 
 > **Why this works:** `split()` with no arguments splits on *any* whitespace (spaces, tabs, newlines) and automatically ignores leading/trailing whitespace. It returns only the non-empty parts.
@@ -76,15 +76,19 @@ print(clean)   # "Hello World from Python"
 | `.isalnum()` | All characters are letters or digits | `"abc123".isalnum()` → `True` |
 | `.isspace()` | All characters are whitespace | `"  \t".isspace()` → `True` |
 
+> **Careful:** `.isdigit()` also accepts characters such as `"²"`: `"²".isdigit()` is `True`, but `int("²")` raises `ValueError`. Before calling `int()`, check with `.isdecimal()` instead.
+
 ### Finding and Counting Substrings
+
+`.find()` returns the index where the substring starts, or `-1` if it is not there; `in` is the preferred way to simply check for it:
 
 ```python
 text = "the quick brown fox jumps over the lazy dog"
 
-print(text.count("the"))        # 2
-print(text.find("fox"))         # 16 (index where "fox" starts)
-print(text.find("cat"))         # -1 (not found)
-print("fox" in text)            # True (preferred for simple checks)
+print(text.count("the"))   # 2
+print(text.find("fox"))    # 16
+print(text.find("cat"))    # -1
+print("fox" in text)       # True
 ```
 
 ### Padding and Alignment
@@ -93,19 +97,20 @@ Useful for generating formatted reports:
 
 ```python
 name = "Alice"
-print(name.ljust(15))       # "Alice          "
-print(name.rjust(15))       # "          Alice"
-print(name.center(15))      # "     Alice     "
-print(name.zfill(10))       # "00000Alice"
+# Brackets make the padding spaces visible
+print(f"[{name.ljust(15)}]")    # [Alice          ]
+print(f"[{name.rjust(15)}]")    # [          Alice]
+print(f"[{name.center(15)}]")   # [     Alice     ]
+print(name.zfill(10))           # 00000Alice
 
 # Practical: formatting a table
 for item, price in [("Coffee", 3.50), ("Sandwich", 7.25)]:
     print(f"{item:<15} ${price:>6.2f}")
-# Coffee           $  3.50
-# Sandwich         $  7.25
+# Coffee          $  3.50
+# Sandwich        $  7.25
 ```
 
-> Go to **Exercise 1 (Text Normalizer)** where you will use these methods to clean messy user input.
+> Go to **Exercise 1 (Text Normalizer)**, where you will use these methods to clean messy user input.
 
 ---
 
@@ -129,13 +134,15 @@ print(matches)   # ['555-1234', '555-5678']
 
 | Pattern | Meaning | Example Match |
 |---------|---------|--------------|
-| `\d` | Any digit (0-9) | `"5"` |
+| `\d` | Any digit (0-9 and other Unicode digits) | `"5"` |
 | `\D` | Any non-digit | `"a"`, `" "` |
 | `\w` | Any word character (letter, digit, `_`) | `"a"`, `"5"`, `"_"` |
 | `\W` | Any non-word character | `" "`, `"!"` |
 | `\s` | Any whitespace (space, tab, newline) | `" "`, `"\t"` |
 | `\S` | Any non-whitespace | `"a"`, `"5"` |
 | `.` | Any character except newline | `"a"`, `"5"`, `" "` |
+
+> In `str` patterns, `\d` matches **any Unicode digit**, so `re.findall(r"\d", "١٢٣")` finds three Arabic-Indic digits. Use `[0-9]` (or the `re.ASCII` flag) when only 0-9 are acceptable.
 
 ### Quantifiers — How Many?
 
@@ -154,12 +161,21 @@ print(matches)   # ['555-1234', '555-5678']
 | `^` | Start of string |
 | `$` | End of string |
 
+For validation, prefer `re.fullmatch()`: it succeeds only when the pattern matches the entire string, so you do not need `^` and `$`.
+
 ```python
 import re
 
 # Must be ALL digits from start to end
-print(bool(re.match(r"^\d+$", "12345")))    # True
-print(bool(re.match(r"^\d+$", "123abc")))   # False
+print(bool(re.match(r"^\d+$", "12345")))     # True
+print(bool(re.match(r"^\d+$", "123abc")))    # False
+
+# Careful: $ also matches just before a final newline
+print(bool(re.match(r"^\d+$", "12345\n")))   # True
+
+# re.fullmatch() must match the WHOLE string
+print(bool(re.fullmatch(r"\d+", "12345")))     # True
+print(bool(re.fullmatch(r"\d+", "12345\n")))   # False
 ```
 
 ### The Key `re` Functions
@@ -167,8 +183,9 @@ print(bool(re.match(r"^\d+$", "123abc")))   # False
 | Function | What It Does | Returns |
 |----------|-------------|---------|
 | `re.match(pattern, string)` | Match at the **start** of string | Match object or `None` |
+| `re.fullmatch(pattern, string)` | Match the **whole** string (validation) | Match object or `None` |
 | `re.search(pattern, string)` | Find **first** match anywhere | Match object or `None` |
-| `re.findall(pattern, string)` | Find **all** matches | List of strings |
+| `re.findall(pattern, string)` | Find **all** matches | List of strings (tuples if the pattern has groups) |
 | `re.sub(pattern, replacement, string)` | **Replace** all matches | New string |
 | `re.split(pattern, string)` | **Split** string by pattern | List of strings |
 
@@ -179,12 +196,12 @@ import re
 
 text = "Order #12345 confirmed"
 
-# match() — only checks the BEGINNING of the string
-print(re.match(r"\d+", text))       # None (string starts with "Order")
+# match() — only checks the BEGINNING (here: "Order")
+print(re.match(r"\d+", text))       # None
 
 # search() — finds the first match ANYWHERE
 print(re.search(r"\d+", text))      # <re.Match object; span=(7, 12), match='12345'>
-print(re.search(r"\d+", text).group())   # "12345"
+print(re.search(r"\d+", text).group())   # 12345
 ```
 
 ### `re.sub()` — Find and Replace with Patterns
@@ -195,12 +212,12 @@ import re
 # Remove all non-digit characters from a phone number
 phone = "(555) 123-4567"
 clean = re.sub(r"\D", "", phone)
-print(clean)   # "5551234567"
+print(clean)   # 5551234567
 
 # Replace multiple spaces with a single space
 messy = "Hello    World     from   Python"
 clean = re.sub(r"\s+", " ", messy).strip()
-print(clean)   # "Hello World from Python"
+print(clean)   # Hello World from Python
 ```
 
 ### Groups — Extracting Parts of a Match
@@ -217,21 +234,69 @@ if match:
     username = match.group(1)   # "alice.smith"
     domain = match.group(2)     # "university.edu"
     print(f"User: {username}, Domain: {domain}")
+# User: alice.smith, Domain: university.edu
+```
+
+### `re.findall()` with Groups
+
+Without groups, `findall()` returns the matched strings; with groups, it returns one tuple of groups per match:
+
+```python
+import re
+
+print(re.findall(r"\d{3}-\d{4}", "555-1234 or 555-5678"))
+# ['555-1234', '555-5678']
+
+# With groups, findall() returns one tuple per match
+print(re.findall(r"(\d{3})-(\d{4})", "555-1234 or 555-5678"))
+# [('555', '1234'), ('555', '5678')]
+```
+
+### More Building Blocks: `[ ]`, `|`, `( )?` and Escapes
+
+| Syntax | Meaning | Example |
+|--------|---------|---------|
+| `[abc]  [0-9]  [a-zA-Z]` | One character from a set or range | `[0-9]` matches "7" |
+| `[^0-9]` | Any character NOT in the set | `[^0-9]` matches "a" |
+| `a\|b` | Either side (alternation) | `cat\|dog` matches "dog" |
+| `(...)?` | An optional group | `(\+1 )?` matches "+1 " or nothing |
+| `\.  \(  \)  \+  \?` | The literal character (escaped) | `\(555\)` matches "(555)" |
+
+```python
+import re
+
+# [...] one character from a set; | either side
+month = r"0[1-9]|1[0-2]"
+print(bool(re.fullmatch(month, "07")))   # True
+print(bool(re.fullmatch(month, "13")))   # False
+
+# (...)? optional group; \( \) \+ literal metacharacters
+phone = r"(\+1 )?\(\d{3}\) \d{3}-\d{4}"
+print(bool(re.fullmatch(phone, "+1 (555) 123-4567")))   # True
+print(bool(re.fullmatch(phone, "(555) 123-4567")))      # True
+print(bool(re.fullmatch(phone, "555 123-4567")))        # False
 ```
 
 ### Always Use Raw Strings (`r"..."`)
 
-Regex patterns should always use **raw strings** (prefix `r`) to prevent Python from interpreting backslashes:
+Regex patterns should always use **raw strings** (prefix `r`) so that Python passes every backslash to the regex engine unchanged:
 
 ```python
-# Without raw string — Python interprets \d as an escape sequence
+import re
+
+# "\d" is not a Python escape, so it survives, but Python 3.12+
+# warns about it (SyntaxWarning: invalid escape sequence)
 pattern = "\d+"
 
-# With raw string — backslash is passed literally to the regex engine
-pattern = r"\d+"
+# The real danger: "\b" IS a Python escape (backspace), so the
+# regex never sees a word boundary and silently finds nothing
+print(re.findall("\bcat\b", "a cat b"))    # []
+
+# With a raw string, the backslash reaches the regex engine
+print(re.findall(r"\bcat\b", "a cat b"))   # ['cat']
 ```
 
-> Go to **Exercise 2 (Regex Validator Suite)** where you will write regex patterns to validate emails, phone numbers, and dates.
+> Go to **Exercise 2 (Regex Validator Suite)**, where you will write regex patterns to validate emails, phone numbers, and dates.
 
 ---
 
@@ -254,8 +319,8 @@ def normalize_text(text):
     text = text.lower()
     return text
 
-print(normalize_text("   HELLO    World  "))   # "hello world"
-print(normalize_text(None))                     # ""
+print(normalize_text("   HELLO    World  "))   # hello world
+print(normalize_text(None) == "")               # True
 ```
 
 ### Pattern 2: Clean a Row of Data
@@ -282,20 +347,29 @@ print(clean_row(raw))
 ### Pattern 3: Validate and Convert Types
 
 ```python
-def safe_float(value, default=0.0):
-    """Convert a value to float safely."""
+def safe_float(value, default=0.0, decimal="."):
+    """Convert a money string such as "$1,234.56" to float.
+    Use decimal="," for European formats such as "1.234,56 €"."""
     if value is None:
         return default
+    text = str(value).replace("$", "").replace("€", "").replace(" ", "")
+    if decimal == ",":
+        text = text.replace(".", "").replace(",", ".")   # 1.234,56 -> 1234.56
+    else:
+        text = text.replace(",", "")                     # 1,234.56 -> 1234.56
     try:
-        cleaned = str(value).strip().replace(",", "").replace("$", "").replace("€", "")
-        return float(cleaned)
-    except (ValueError, TypeError):
+        return float(text)
+    except ValueError:
         return default
 
-print(safe_float("$1,234.56"))   # 1234.56
-print(safe_float("N/A"))          # 0.0
-print(safe_float(None))           # 0.0
+print(safe_float("$1,234.56"))                 # 1234.56
+print(safe_float("1.234,56 €", decimal=","))   # 1234.56
+print(safe_float("12,50 €", decimal=","))      # 12.5
+print(safe_float("N/A"))                       # 0.0
+print(safe_float(None))                        # 0.0
 ```
+
+> **Know your number format.** In Spain, `"1.234,56"` means 1234.56, the US `"1,234.56"`. Simply deleting every comma would turn `"12,50 €"` into `1250.0`, so the function needs to be told which format the data uses.
 
 ### Pattern 4: Standardize Categories
 
@@ -318,13 +392,13 @@ def standardize_category(raw_category):
     key = raw_category.strip().lower()
     return CATEGORY_MAP.get(key, "Other")
 
-print(standardize_category("  FOOD  "))        # "Food & Dining"
-print(standardize_category("restaurant"))       # "Food & Dining"
-print(standardize_category("uber"))             # "Transportation"
-print(standardize_category("mystery"))          # "Other"
+print(standardize_category("  FOOD  "))        # Food & Dining
+print(standardize_category("restaurant"))       # Food & Dining
+print(standardize_category("uber"))             # Transportation
+print(standardize_category("mystery"))          # Other
 ```
 
-> Go to **Exercise 3 (CSV Data Cleaner)** where you will combine all these patterns to clean a messy real-world CSV file.
+> Go to **Exercise 3 (CSV Data Cleaner)**, where you will combine all these patterns to clean a messy real-world CSV file.
 
 ---
 
@@ -376,13 +450,13 @@ for t in tests:
 
 Output:
 ```
-   (555) 123-4567  →  (555) 123-4567
-     555.123.4567  →  (555) 123-4567
-  +1-555-123-4567  →  (555) 123-4567
-       5551234567  →  (555) 123-4567
+      (555) 123-4567  →  (555) 123-4567
+        555.123.4567  →  (555) 123-4567
+     +1-555-123-4567  →  (555) 123-4567
+          5551234567  →  (555) 123-4567
 ```
 
-> Go to **Exercise 4 (Phone Number Parser)** where you will build a robust phone number cleaning function and process a batch of messy contact data.
+> Go to **Exercise 4 (Phone Number Parser)**, where you will build a robust phone number cleaning function and process a batch of messy contact data.
 
 ---
 
@@ -394,7 +468,7 @@ Email validation is a classic problem that demonstrates why regex is so useful �
 
 A valid email address has the form: `local@domain.tld`
 
-- **Local part:** Letters, digits, dots, underscores, hyphens
+- **Local part:** Letters, digits, dots, underscores, hyphens, `%` and `+`
 - **`@` symbol:** Exactly one
 - **Domain:** Letters, digits, hyphens, separated by dots
 - **TLD (Top-Level Domain):** At least 2 characters (e.g., `.com`, `.edu`, `.io`)
@@ -419,12 +493,15 @@ tests = [
     "user@.com",               # Empty domain
     "user@domain",             # No TLD
     "user @domain.com",        # Space in address
+    "user@domain..com",        # Invalid, but accepted!
 ]
 
 for email in tests:
     status = "✅" if is_valid_email(email) else "❌"
     print(f"  {status} {email}")
 ```
+
+> This practical pattern still accepts some invalid addresses, such as `user@domain..com` or `.user@domain.com`: that is the limit of regex validation. The only real proof that an address works is sending a confirmation email.
 
 ### Breaking Down the Pattern
 
@@ -435,6 +512,8 @@ for email in tests:
 \.                    →  Literal dot (escaped)
 [a-zA-Z]{2,}$        →  TLD: at least 2 letters, then end of string
 ```
+
+> Because `$` also matches just before a final newline, `re.match()` with `^...$` would accept `"alice@example.com\n"`. The function strips the input first; `re.fullmatch(pattern, email)` avoids the problem altogether.
 
 ### Pre-Cleaning Before Validation
 
@@ -459,7 +538,7 @@ def clean_and_validate_email(raw_email):
     return None
 ```
 
-> Go to **Exercise 2 (Regex Validator Suite)** where you will build validators for emails, phone numbers, and dates.
+> Go to **Exercise 2 (Regex Validator Suite)**, where you will build validators for emails, phone numbers, and dates.
 
 ---
 
@@ -496,14 +575,47 @@ with open("legacy_data.txt", "r", encoding="latin-1") as file:
 ### Handling Encoding Errors
 
 ```python
-# Option 1: Skip characters that can't be decoded
-with open("messy.txt", "r", encoding="utf-8", errors="ignore") as file:
+# Option 1 (recommended): replace bad bytes with "�"
+# The problem stays visible, so you can find and fix it later
+with open("messy.txt", "r", encoding="utf-8", errors="replace") as file:
     content = file.read()
 
-# Option 2: Replace bad characters with a placeholder
-with open("messy.txt", "r", encoding="utf-8", errors="replace") as file:
-    content = file.read()    # Bad chars become "�"
+# Option 2: silently drop bad bytes (data is lost without a trace)
+with open("messy.txt", "r", encoding="utf-8", errors="ignore") as file:
+    content = file.read()
 ```
+
+### Catching `UnicodeDecodeError`
+
+Reading a file with the wrong encoding raises `UnicodeDecodeError`, which you can catch like any other exception:
+
+```python
+# A Latin-1 file read as UTF-8 raises UnicodeDecodeError
+try:
+    with open("legacy_data.txt", "r", encoding="utf-8") as file:
+        content = file.read()
+except UnicodeDecodeError as e:
+    print("Not UTF-8:", e.reason)   # Not UTF-8: invalid continuation byte
+    with open("legacy_data.txt", "r", encoding="latin-1") as file:
+        content = file.read()
+```
+
+> Catch `UnicodeDecodeError` to try another encoding. Put the encodings in a list and loop over them to try several in turn.
+
+### Spotting Mojibake
+
+Garbled text such as `Ã©` usually means UTF-8 bytes were decoded with the wrong encoding:
+
+```python
+# UTF-8 bytes decoded with the wrong encoding (cp1252 here)
+broken = "café".encode("utf-8").decode("cp1252")
+print(broken)                       # cafÃ©
+
+# Known artifacts can be repaired with replace()
+print(broken.replace("Ã©", "é"))   # café
+```
+
+> This garbled text is called **mojibake**. Typical artifacts: `Ã©` → `é`, `Ã±` → `ñ`, `Ã¼` → `ü`, `â€™` → `’`. If you see them, the text was decoded with the wrong encoding somewhere along the way.
 
 ### Removing Non-Printable Characters
 
@@ -516,8 +628,8 @@ def remove_non_printable(text):
     return re.sub(r"[\x00-\x08\x0B-\x1F\x7F]", "", text)
 
 messy = "Hello\x00World\x07 with\x1b control chars"
-print(remove_non_printable(messy))   # "HelloWorld with control chars"
-print(remove_non_printable("Café\x00 Muñoz"))   # "Café Muñoz"
+print(remove_non_printable(messy))   # HelloWorld with control chars
+print(remove_non_printable("Café\x00 Muñoz"))   # Café Muñoz
 ```
 
 ### Normalizing Unicode Characters
@@ -529,8 +641,8 @@ Some characters that look identical are actually different Unicode code points:
 s1 = "café"          # 'é' as a single character (U+00E9)
 s2 = "cafe\u0301"    # 'e' + combining accent (U+0301)
 
-print(s1 == s2)       # False!
-print(len(s1), len(s2))  # 4, 5
+print(s1 == s2)       # False
+print(len(s1), len(s2))  # 4 5
 
 # Fix with unicodedata normalization
 import unicodedata
@@ -539,7 +651,7 @@ s2_norm = unicodedata.normalize("NFC", s2)
 print(s1_norm == s2_norm)   # True
 ```
 
-> Go to **Exercise 5 (Encoding Fixer)** where you will clean files with encoding problems and special characters.
+> Go to **Exercise 5 (Encoding Fixer)**, where you will clean files with encoding problems and special characters.
 
 ---
 
@@ -549,7 +661,7 @@ As you write more cleaning code, you'll notice the same functions appearing in e
 
 ### What is a Module?
 
-A module is simply a `.py` file containing functions that you can import from other files:
+As in Session I, a module is simply a `.py` file containing functions that you can import from other files:
 
 ```python
 # cleaners.py — your reusable cleaning module
@@ -564,6 +676,8 @@ def clean_text(text):
 
 def clean_phone(phone):
     """Parse phone to (XXX) XXX-XXXX format."""
+    if not isinstance(phone, str):
+        return None
     digits = re.sub(r"\D", "", phone)
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
@@ -579,12 +693,19 @@ def clean_email(email):
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     return email if re.match(pattern, email) else None
 
-def safe_float(value, default=0.0):
-    """Convert to float, stripping currency symbols."""
+def safe_float(value, default=0.0, decimal="."):
+    """Convert a money string such as "$1,234.56" to float.
+    Use decimal="," for European formats such as "1.234,56 €"."""
+    if value is None:
+        return default
+    text = str(value).replace("$", "").replace("€", "").replace(" ", "")
+    if decimal == ",":
+        text = text.replace(".", "").replace(",", ".")   # 1.234,56 -> 1234.56
+    else:
+        text = text.replace(",", "")                     # 1,234.56 -> 1234.56
     try:
-        cleaned = str(value).strip().replace(",", "").replace("$", "").replace("€", "")
-        return float(cleaned)
-    except (ValueError, TypeError):
+        return float(text)
+    except ValueError:
         return default
 ```
 
@@ -595,19 +716,21 @@ def safe_float(value, default=0.0):
 from cleaners import clean_text, clean_phone, clean_email, safe_float
 
 # Now you can use these functions anywhere
-print(clean_text("   HELLO   WORLD   "))    # "hello world"
-print(clean_phone("(555) 123-4567"))         # "(555) 123-4567"
-print(clean_email("ALICE@EXAMPLE.COM"))      # "alice@example.com"
+print(clean_text("   HELLO   WORLD   "))    # hello world
+print(clean_phone("(555) 123-4567"))         # (555) 123-4567
+print(clean_phone(None))                     # None
+print(clean_email("ALICE@EXAMPLE.COM"))      # alice@example.com
 print(safe_float("$1,234.56"))               # 1234.56
 ```
 
-### The `if __name__ == "__main__"` Guard
+### The `if __name__ == "__main__"` Guard (Review)
 
-When you import a module, Python runs **all the code** in that file. The `__name__` guard prevents test code from running on import:
+You met this guard in Session I. When you import a module, Python runs **all the code** in that file. The `__name__` guard prevents test code from running on import.
+
+Inside it, `assert condition` turns quick checks into real tests: it does nothing when the condition is true and stops with `AssertionError` when it is false.
 
 ```python
 # cleaners.py
-import re
 
 def clean_text(text):
     """Normalize whitespace and case."""
@@ -618,8 +741,8 @@ def clean_text(text):
 # This only runs when you execute cleaners.py directly,
 # NOT when another file does "from cleaners import ..."
 if __name__ == "__main__":
-    # Test code
-    print(clean_text("  HELLO   WORLD  "))
+    assert clean_text("  HELLO   WORLD  ") == "hello world"
+    assert clean_text(None) == ""
     print("All tests passed!")
 ```
 
@@ -633,49 +756,50 @@ if __name__ == "__main__":
 | **Docstrings on every function** | Others (and future you) need to know what it does | `"""Clean and validate an email."""` |
 | **Safe defaults** | Handle `None`, empty strings, and wrong types gracefully | `if not isinstance(text, str): return ""` |
 
-> Go to **Exercise 6 (Data Cleaning Module)** where you will build a full reusable cleaning module and use it to process a messy dataset.
+> Go to **Exercise 6 (Data Cleaning Module)**, where you will build a full reusable cleaning module and use it to process a messy dataset.
 
 ---
 
 ## Quick Reference Cheat Sheet
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  STRING METHODS                                          │
-│    .strip()  .split()  .join()  .replace()               │
-│    .startswith()  .endswith()  .find()  .count()         │
-│    .isdigit()  .isalpha()  .isalnum()  .isspace()       │
-│    .ljust()  .rjust()  .center()  .zfill()              │
-│                                                          │
-│  REGEX (import re)                                       │
-│    re.match(pattern, string)    → match at start         │
-│    re.search(pattern, string)   → first match anywhere   │
-│    re.findall(pattern, string)  → all matches            │
-│    re.sub(pattern, repl, string)→ find & replace         │
-│    re.split(pattern, string)    → split by pattern       │
-│                                                          │
-│  REGEX PATTERNS                                          │
-│    \d  digit    \D  non-digit    \w  word char           │
-│    \s  space    \S  non-space    .   any char            │
-│    +   one+     *   zero+        ?   optional            │
-│    {n} exact    {n,m} range      ^   start   $  end     │
-│    ()  group    []  char class   |   or                  │
-│                                                          │
-│  DATA CLEANING PATTERNS                                  │
-│    " ".join(text.split())        → normalize whitespace  │
-│    re.sub(r"\D", "", phone)      → extract digits        │
-│    str.strip().lower()           → normalize case        │
-│    LOOKUP_MAP.get(key, default)  → standardize categories│
-│                                                          │
-│  ENCODING                                                │
-│    open(f, encoding="utf-8")     → always specify        │
-│    errors="ignore" / "replace"   → handle bad bytes      │
-│    unicodedata.normalize("NFC")  → normalize Unicode     │
-│                                                          │
-│  MODULES                                                 │
-│    from cleaners import func     → import your module    │
-│    if __name__ == "__main__":    → guard test code       │
-└──────────────────────────────────────────────────────────┘
+STRING METHODS
+  .strip()  .split()  .join()  .replace()
+  .startswith()  .endswith()  .find()  .count()
+  .isdigit()  .isdecimal()  .isalpha()  .isalnum()
+  .ljust()  .rjust()  .center()  .zfill()
+
+REGEX (import re)
+  re.match(pattern, string)     → match at start
+  re.fullmatch(pattern, string) → whole string (validation)
+  re.search(pattern, string)    → first match anywhere
+  re.findall(pattern, string)   → all matches
+  re.sub(pattern, repl, string) → find & replace
+  re.split(pattern, string)     → split by pattern
+
+REGEX PATTERNS
+  \d  digit    \D  non-digit    \w  word char
+  \s  space    \S  non-space    .   any char
+  +   one+     *   zero+        ?   optional
+  {n} exact    {n,m} range      ^   start   $  end
+  ()  group    []  char class   |   or
+  \.  literal dot (escape metacharacters)
+
+DATA CLEANING PATTERNS
+  " ".join(text.split())        → normalize whitespace
+  re.sub(r"\D", "", phone)      → extract digits
+  str.strip().lower()           → normalize case
+  LOOKUP_MAP.get(key, default)  → standardize categories
+
+ENCODING
+  open(f, encoding="utf-8")     → always specify
+  except UnicodeDecodeError:    → try another encoding
+  errors="replace"              → bad bytes become �
+  unicodedata.normalize("NFC", text) → normalize Unicode
+
+MODULES
+  from cleaners import func     → import your module
+  if __name__ == "__main__":    → guard test code
 ```
 
 ---

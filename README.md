@@ -48,23 +48,23 @@ By the end of the course, learners will be able to:
 
 ### Set up the environment
 
-From the repository root, install the declared dependencies without installing the repository itself as a Python package:
+From the repository root, install the declared dependencies (Jupyter, pandas, requests, Beautiful Soup, DuckDB, matplotlib, Flask, FastAPI and Streamlit):
 
 ```bash
-uv sync --no-install-project
+uv sync
 ```
 
 Open a session's `.ipynb` notebook in Jupyter or Visual Studio Code and run the cells in order. To start Jupyter from the project environment:
 
 ```bash
-uv run --no-sync jupyter lab
+uv run jupyter lab
 ```
 
-Some later sessions use additional libraries or services. Install any session-specific dependencies as directed in that session's guide before running its exercises. API exercises may require an internet connection; Flask, FastAPI, and Streamlit exercises include their own run instructions.
+API exercises need an internet connection. Flask, FastAPI and Streamlit exercises include their own run instructions (always through `uv run`). The country data used in Sessions XII, XIV and XIX lives in [`data/countries.json`](data/countries.json) (see [`data/README.md`](data/README.md)).
 
 ## How to use the materials
 
-1. Start with the concepts guide for the session.
+1. Start with the session slides (`python-i-session-NN-slides.html`, open it in a browser) or the concepts guide; they cover the same content.
 2. Read the explanations alongside the code examples.
 3. Complete the unsolved exercise notebook, running cells in order.
 4. Review the output and try changing inputs to explore edge cases.
@@ -75,17 +75,20 @@ Some session folders also contain solved notebooks. Their availability varies; u
 
 ```text
 .
+├── session-00-group-assignment/   # group project brief and slides
 ├── session-01-.../
+│   ├── python-i-session-01-slides.html   # slide deck (open in a browser)
+│   ├── python-i-session-01-slides.zip    # the same deck, packed for upload
 │   ├── session_1_concepts_guide.md
 │   └── session_1_exercises.ipynb
 ├── ...
 ├── session-19-.../
+├── data/                          # shared datasets (countries.json)
 ├── LICENSE
-├── pyproject.toml
-└── uv.lock
+└── pyproject.toml
 ```
 
-The project configuration and lock file describe the shared Python environment. Some tools are specific to individual sessions and should be added only when those materials require them.
+The project configuration describes the shared Python environment; the repository is not an installable package (`[tool.uv] package = false`).
 
 ## License
 

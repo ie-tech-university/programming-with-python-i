@@ -1,148 +1,338 @@
 # Session XIII: Concepts Guide
 ## Organizing Code with Modules
 
-Structure code into modules, packages, use __init__.py, standard library.
+This session covers how to split a program into modules and packages, how Python finds the code you import, how the `__name__` guard separates importing from running, which standard-library modules to reach for first, and how to add third-party packages to a project with uv.
 
 ---
 
 ## 1. What Is a Module?
 
-A **module** is any `.py` file containing functions, classes, or variables.
+Every `.py` file is a module: a reusable namespace of functions, classes, and constants.
 
-**How to read this example:** The first file defines a reusable function and constant; the second imports that file and accesses names through its namespace. The prefix clarifies the origin of `add()` and prevents collisions with similarly named functions.
+### A Module Is a Reusable Namespace
+
+Every `.py` file can be imported as a **module**. Its functions, classes, and constants become names inside that module, and other files reach them through the module prefix.
+
+**How to read this example:** `main.py` imports `math_utils` and calls `math_utils.add()`. The prefix tells the reader where `add` comes from and prevents collisions when two modules define a function with the same name. Both files sit in the same folder, so `uv run python main.py` finds `math_utils.py`.
 
 ```python
 # math_utils.py
-def add(a, b): return a + b
 PI = 3.14159
-```
 
-**How to read this example:** A module defines names that another file can import. Keeping the module prefix visible makes a function's origin clear and prevents accidental name collisions.
+
+def add(a: float, b: float) -> float:
+    return a + b
+
+
+def circle_area(radius: float) -> float:
+    return PI * radius ** 2
+```
 
 ```python
 # main.py
 import math_utils
-print(math_utils.add(5, 3))
+
+print(math_utils.add(5, 3))        # 8
+print(math_utils.circle_area(2))   # 12.56636
 ```
+
+Another file can now reuse the formula in `circle_area()` instead of copying it.
 
 ---
 
 ## 2. Import Styles
 
-**How to read this example:** These forms trade explicit module qualification for shorter names. Group imports by source and avoid wildcard imports because they hide which names enter the namespace.
+Choose how names enter your file, keep imports easy to scan, and know where Python looks for them.
+
+### Import Styles Are Readability Choices
 
 ```python
-import math_utils                    # Full module
-from math_utils import add, PI      # Specific items
-import math_utils as mu             # Alias
+import math_utils                  # full module:    math_utils.add(5, 3)
+from math_utils import add, PI     # specific names: add(5, 3)
+import math_utils as mu            # alias:          mu.add(5, 3)
 ```
+
+`import math_utils` keeps the module name visible at each use. `from math_utils import add` gives a shorter call, but it is less obvious where `add` came from. An alias such as `import pandas as pd` is useful when it is a well-known convention.
+
+Avoid wildcard imports such as `from module import *`: they bring an unknown set of names into the file and can silently overwrite your own. Import only what the file uses.
 
 ### Import Order (PEP 8)
 
-**How to read this example:** These forms trade explicit module qualification for shorter names. Group imports by source and avoid wildcard imports because they hide which names enter the namespace.
+Put imports at the top of the file, in three groups separated by a blank line:
+
+1. **Standard library:** modules that ship with Python.
+2. **Third-party:** packages installed with `uv add`.
+3. **Local:** modules from your own project.
+
+**How to read this example:** PEP 8 asks for one module per `import` line (`import json` and `import os`, not `import os, json`); `from module import a, b` is fine. Sorting each group alphabetically makes duplicates easy to spot.
 
 ```python
 # 1. Standard library
-import os, json
+import json
+import os
+
 # 2. Third-party
 import requests
-# 3. Local
-from src.models import Transaction
+
+# 3. Local (your project)
+from budget_manager.models import Transaction
 ```
+
+### How Python Finds Modules
+
+`import name` searches the folders listed in `sys.path`, in order, and uses the first match:
+
+1. the folder of the script you run (`uv run python main.py`), or the current folder with `python -m` and in a notebook;
+2. the standard library;
+3. the packages installed in the project environment (`.venv`), including your own project when it was created with `uv init --package`.
+
+```python
+import sys
+
+for folder in sys.path:
+    print(folder)
+```
+
+> **Warning:** Because your folder comes first, a file named `random.py`, `json.py`, or `pandas.py` next to your script hides the real module: `import random` loads your file, and `random.randint` fails with an `AttributeError`. Give your modules names that do not clash.
 
 ---
 
 ## 3. The `__name__` Guard
 
-**How to read this example:** The function can be imported without running the demonstration; the `__name__` check runs it only when the file is executed directly.
+Make a file usable both as a script and as an importable module.
+
+### The Main Guard Separates Importing from Running
+
+When Python imports a file, it runs every top-level statement in it, so a demo `print` or a menu loop at the top level would run on every import.
+
+Python sets `__name__` to `"__main__"` in the file you run directly, and to the module name (`"math_utils"`) when the file is imported.
+
+**How to read this example:** Run directly, the guard is true and `main()` prints `8`; imported, the guard is false, so `add` and `main` are defined but nothing runs. Keep only the start-up call inside the guard and the logic in functions that other files can import.
 
 ```python
 # math_utils.py
-def add(a, b): return a + b
+def add(a: float, b: float) -> float:
+    return a + b
+
+
+def main() -> None:
+    print(add(5, 3))
+
 
 if __name__ == "__main__":
-    print(add(5, 3))  # Only runs when executed directly
+    main()
 ```
+
+```bash
+$ uv run python math_utils.py
+8
+$ uv run python -c "import math_utils"   # prints nothing
+```
+
+### Seeing the Guard Work from a Notebook
+
+Every notebook cell runs in the `__main__` namespace, so a guard typed in a cell is always true. To watch it work, write a real file and then run or import it:
+
+- `%%writefile greetings.py` (the first line of a cell) saves the rest of the cell to that file instead of running it.
+- `!` runs a terminal command from a cell.
+- `import greetings` loads the file as a module, so its guard is false.
+
+```python
+%%writefile greetings.py
+def greet(name: str) -> str:
+    return f"Hello, {name}!"
+
+
+if __name__ == "__main__":
+    print(greet("Ana"))
+```
+
+```python
+!uv run python greetings.py
+# Hello, Ana!
+```
+
+```python
+import greetings                 # prints nothing
+print(greetings.greet("Luis"))   # Hello, Luis!
+```
+
+> Python imports a module only once per session. After you edit the file, call `importlib.reload(greetings)` or restart the kernel.
+
+> Go to **Exercise 1 (Create a Module)**, where you will write a `text_utils.py` module with `%%writefile`, run it as a script, and import it to see the guard in action.
 
 ---
 
 ## 4. Packages
 
-A **package** is a folder with `__init__.py`:
+A package groups related modules under one import name.
 
-**How to read this example:** The tree groups related modules beneath one package path. Imports can identify where a class or function comes from; packages are useful when responsibilities are related, not merely to increase the number of files.
+### A Package Organizes Related Modules
 
+A **package** is a folder of modules imported under a shared name: `budget_manager.models` is the file `budget_manager/models.py`.
+
+A regular (traditional) package contains an `__init__.py` file, which runs when the package is first imported and can define a small public interface. Keep it short: substantial behavior in `__init__.py` makes imports hard to follow.
+
+> Since Python 3.3, a folder without `__init__.py` can also be imported as a *namespace package*, but for your own projects create regular packages.
+
+```text
+budget_manager/
+    __init__.py
+    models.py
+    reports.py
+    main.py
 ```
-src/
-├── __init__.py
-├── models.py
-├── validators.py
-└── reports.py
-```
-
-**How to read this example:** The directory groups related modules under one package path. Imports reflect that structure; each file should have a distinct responsibility rather than splitting code arbitrarily.
 
 ```python
-from src.models import Transaction
-from src import reports
+from budget_manager.models import Transaction
+from budget_manager import reports
 ```
+
+**How to read this example:** Each module owns one responsibility; a package is worth creating when those modules belong together, not merely to have more files.
+
+### Creating a Packaged Project with uv
+
+Let uv create the package. `--package` puts the code under `src/` and installs the project into its own environment, so `import budget_manager` works from any folder of the project.
+
+```bash
+$ uv init --package budget-manager
+$ cd budget-manager
+$ uv run budget-manager
+Hello from budget-manager!
+```
+
+The project name uses a hyphen; the import name uses an underscore, because a hyphen is not valid in a Python name.
+
+```text
+budget-manager/
+    pyproject.toml
+    README.md
+    src/
+        budget_manager/
+            __init__.py   # def main(): ...
+```
+
+The `budget-manager` command comes from `[project.scripts]` in `pyproject.toml`. When you move the start-up code into `main.py`, point the command there:
+
+```toml
+[project.scripts]
+budget-manager = "budget_manager.main:main"
+```
+
+### Running Code Inside a Package
+
+From the project folder, run package code by its import name, never by file path:
+
+```bash
+$ uv run budget-manager                   # the [project.scripts] command
+$ uv run python -m budget_manager.main    # run one module as a script
+```
+
+`python -m budget_manager.main` finds the module through `sys.path` and runs it with `__name__ == "__main__"` as part of its package, so its imports work.
+
+> **Warning:** Running a file by path (`python src/budget_manager/main.py`) is fragile: Python puts `src/budget_manager/` first in `sys.path` instead of `src/`, so `import budget_manager` works only because uv installed the project, and relative imports fail with `ImportError: attempted relative import with no known parent package`.
+
+### Absolute and Relative Imports
+
+An **absolute import** spells out the full path from the package name. PEP 8 recommends it because it is readable and means the same thing in every file.
+
+A **relative import** starts with a dot: `.` is the current package and `..` its parent. It only works in a module imported as part of a package (with `-m` or the project command), never in a file run by path.
+
+**How to read this example:** Both lines import the same class. This course uses absolute imports; recognize relative ones when you read other projects.
+
+```python
+# src/budget_manager/reports.py
+
+# absolute import (recommended by PEP 8)
+from budget_manager.models import Transaction
+
+# relative import: models.py in this package
+from .models import Transaction
+```
+
+### A Practical Project Layout
+
+```text
+budget-manager/
+    pyproject.toml    # dependencies + command
+    README.md         # how to run the project
+    src/
+        budget_manager/
+            __init__.py
+            models.py     # Transaction, Budget
+            storage.py    # JSON persistence
+            reports.py    # calculations, formatting
+            helpers.py    # small reusable utilities
+            main.py       # command-line flow
+```
+
+**How to read this example:** Each module under `src/budget_manager/` owns one responsibility and `main.py` coordinates them; this is also the layout of the group project.
+
+This layout is not mandatory for every small script. The goal is not to create many files; it is to make responsibilities easy to locate once the code has enough behavior to justify separation.
+
+Start simply, then extract a module when a clear responsibility emerges.
+
+> Go to **Exercise 2 (Package Structure)**, where you will build an `inventory` package with separate model, validator, and inventory modules and run it from a script.
 
 ---
 
 ## 5. Standard Library Highlights
 
-| Module | Purpose |
-|--------|---------|
-| `os` | File system |
-| `json` | JSON parsing |
-| `csv` | CSV files |
-| `re` | Regex |
-| `datetime` | Dates/times |
-| `pathlib` | Modern paths |
-| `collections` | Counter, defaultdict |
-| `argparse` | CLI parsing |
+Modules that ship with Python, so you do not have to reinvent them.
 
-**How to read this example:** `Counter` counts repetitions, `defaultdict(list)` creates groups conveniently, and `Path` represents filesystem locations. Each tool replaces repetitive bookkeeping.
+| Module | Use it for |
+|--------|------------|
+| `pathlib` | Paths: `/` to join, `.exists()`, `.mkdir()` |
+| `json` | Python data ↔ JSON text |
+| `csv` | Tabular text with correct quoting |
+| `datetime` | Dates and times, not plain strings |
+| `re` | Regular expressions |
+| `collections` | `Counter`, `defaultdict` |
+| `argparse` | Command-line options |
+| `os` | Environment variables, OS services |
+
+**How to read this example:** `Counter` tallies values and `most_common()` returns (value, count) pairs; `defaultdict(list)` creates the empty list the first time a key is used; `Path` joins paths with `/` and creates folders and files.
 
 ```python
-from pathlib import Path
 from collections import Counter, defaultdict
+from pathlib import Path
 
-counts = Counter(["a","b","a","c","a"])
-print(counts.most_common(2))  # [("a",3),("b",1)]
+categories = ["Food", "Transport", "Food", "Rent", "Food"]
+counts = Counter(categories)
+print(counts.most_common(2))
+# [('Food', 3), ('Transport', 1)]
 
 groups = defaultdict(list)
-groups["A"].append("Alice")
+groups["Food"].append("Lunch")
+print(dict(groups))   # {'Food': ['Lunch']}
+
+folder = Path("reports")
+folder.mkdir(exist_ok=True)
+report = folder / "summary.txt"
+report.write_text("Food: 3", encoding="utf-8")
+print([f.name for f in folder.iterdir()])
+# ['summary.txt']
 ```
+
+> Go to **Exercise 3 (Standard Library)**, where you will count words with `Counter`, group students with `defaultdict`, and create files with `Path`.
 
 ---
 
 ## 6. Installing Packages
 
-**How to read this example:** The directory groups related modules under one package path. Imports reflect that structure; each file should have a distinct responsibility rather than splitting code arbitrarily.
+Third-party packages belong to the **project environment**, not just to your computer: another developer needs the list of dependencies to recreate it.
+
+**How to read this example:** `uv add` records each dependency in `pyproject.toml`, pins exact versions in `uv.lock`, and installs them into the project's `.venv`. `uv add -r requirements.txt` imports an existing requirements file the same way.
 
 ```bash
 $ uv add requests pandas duckdb
-$ uv pip install -r requirements.txt
+$ uv add -r requirements.txt
+$ uv sync
 ```
 
----
+A teammate then runs `uv sync` to get the same environment. Install only the libraries the project actually uses.
 
-## Quick Reference
-
-**How to read this example:** This is a compact index of module and package terminology; the detailed sections explain how to apply each import and project-structure pattern.
-
-```
-MODULE      Any .py file
-PACKAGE     Folder with __init__.py
-IMPORT      import mod / from mod import func
-GUARD       if __name__ == "__main__":
-STDLIB      os  json  csv  re  pathlib  collections
-INSTALL     uv add package
-```
-
----
-
+> **Warning:** Avoid `uv pip install`: it installs a package without recording it, and the next `uv sync` removes it again.
 
 ---
 
@@ -155,35 +345,69 @@ A good rule is:
 - one function does one job well
 - the main script coordinates the flow rather than containing all logic
 
-### Better Structure
+### From One Script to a Small Project
 
-**How to read this example:** The helper module defines reusable behavior and the main module imports it to coordinate the workflow. This is a simple one-way dependency between files.
+A single file is fine for a quick demo, but once validation, summaries, and reports pile up, responsibilities become hard to find:
+
+```python
+# everything in one script
+names = ["alice", "bob"]
+for name in names:
+    print(name.title())
+```
+
+**How to read this example:** Extracting a module per responsibility gives each one a name. The three files sit in one folder and run with `uv run python main.py`; Python finds `helpers` and `reports` because the script's folder comes first in `sys.path`.
 
 ```python
 # helpers.py
-
 def normalize_name(name: str) -> str:
     return name.strip().title()
 
-# main.py
+# reports.py
 from helpers import normalize_name
 
-print(normalize_name("  jane doe  "))
+def summary(names: list[str]) -> str:
+    cleaned = [normalize_name(n) for n in names]
+    return ", ".join(cleaned)
+
+# main.py
+from reports import summary
+
+if __name__ == "__main__":
+    print(summary(["  alice ", "BOB"]))   # Alice, Bob
 ```
 
-This pattern is easier to test and easier to maintain.
+Each file now has a single responsibility, which makes the code easier to search, debug, test, and extend. Professional Python projects often follow this rule:
 
-> Go to **Exercise 6 (Tiny Package Design)** to build a small group of related modules instead of everything in one file.
+- `helpers.py` contains reusable utilities
+- `storage.py` manages data access (loading and saving)
+- `reports.py` turns data into summaries
+- `main.py` controls the workflow
+- `README.md` explains how to run the project
+
+When the folder grows, move these modules into a package (Section 4).
+
+> Go to **Exercise 4 (Refactor Monolithic Code (Capstone))**, where you will decide which module each part of a monolithic payroll script belongs in.
+
+> Go to **Exercise 5 (Tiny Package Design)**, where you will split a score report into `helpers.py`, `reports.py`, and `main.py` and run it.
+
+### Keep Dependencies One-Way
+
+A **circular import** occurs when module A imports module B while module B imports module A. Python may reach one module before it has finished defining the names the other expects, and the import fails.
+
+For example, if `models.py` imports a report function from `reports.py` and `reports.py` imports `Transaction` from `models.py`, their responsibilities are tangled. The simpler design is for the report module to depend on the model, while the model does not depend on the report.
+
+Draw arrows from the module that uses a service to the module that provides it: a one-way dependency is easier to reason about.
 
 ---
 
 ## 8. Common Module Design Mistakes
 
-- Importing modules from the wrong path
+- Naming a file after a module you need (`random.py`, `json.py`), which hides the real one
+- Running package code by file path instead of `uv run python -m package.module`, so imports depend on where you happen to run from
 - Having circular imports between files
-- Putting all logic inside `if __name__ == "__main__":` blocks
-- Saving data in a module without a clear reason
-- Using absolute imports when a project is intended to be package-like
+- Putting all logic inside `if __name__ == "__main__":` instead of in importable functions
+- Doing work at import time (reading files, calling APIs, printing) in a module's top level
 
 A clean project is easier to extend and much easier to debug.
 
@@ -199,173 +423,21 @@ Before a project is considered complete, ask:
 
 Good structure is part of the quality of the solution.
 
-
 ---
 
-## Deep Dive: From One Script to a Small Project
+## Quick Reference
 
-A script works fine at first, but the moment you add multiple responsibilities, it becomes much harder to understand. That is exactly why modules exist.
+**How to read this example:** This is a compact index of module and package terminology; the detailed sections explain how to apply each import and project-structure pattern.
 
-Imagine all of this in one file:
-
-**How to read this example:** The single-file loop is clear while it handles one task. As validation and reporting are added, responsibilities become harder to locate; extracting a helper gives a transformation a reusable name.
-
-```python
-# everything in one script
-names = ["alice", "bob"]
-for name in names:
-    print(name.title())
 ```
-
-This is fine for a quick demo, but it becomes messy once you add validation, summaries, and report generation. A more maintainable version is:
-
-**How to read this example:** The single-file loop is clear while it handles one task. As validation and reporting are added, responsibilities become harder to locate; extracting a helper gives a transformation a reusable name.
-
-```python
-# helpers.py
-
-def normalize_name(name: str) -> str:
-    return name.strip().title()
-
-# reports.py
-from helpers import normalize_name
-
-def summary(names):
-    cleaned = [normalize_name(name) for name in names]
-    return ", ".join(cleaned)
+MODULE      Any .py file
+PACKAGE     Folder of modules (regular package: __init__.py)
+IMPORT      import mod / from mod import name / import mod as m
+ORDER       stdlib, third-party, local (blank line between)
+GUARD       if __name__ == "__main__":
+NOTEBOOK    %%writefile mod.py   then   !uv run python mod.py
+PROJECT     uv init --package name   (code in src/name/)
+RUN         uv run name / uv run python -m pkg.module
+STDLIB      pathlib  json  csv  datetime  re  collections
+INSTALL     uv add package / uv add -r requirements.txt
 ```
-
-This separation is important because each file has a single responsibility. That makes the code easier to search, debug, test, and expand later.
-
-Professional Python projects often follow this rule:
-
-- `helpers.py` contains reusable utilities
-- `data.py` manages data access
-- `main.py` controls the workflow
-- `README.md` explains how to run the project
-
-That structure turns a tiny demonstration into a maintainable app.
-
-
----
-
-## Understanding Modules, Imports, and Packages in More Detail
-
-As a Python program grows, its main challenge often changes from “How do I write this function?” to “Where should this function live, and how should another part of the program use it?” Modules and packages provide an answer.
-
-### A Module Is a Reusable Namespace
-
-Every `.py` file can be imported as a module. Its functions, classes, and constants become names inside that module:
-
-**How to read this example:** The `geometry` prefix makes the function origin explicit, and the function uses the module constant to calculate circle area. Another file can reuse the formula without copying it, while the namespace avoids ambiguous global names.
-
-```python
-# geometry.py
-PI = 3.14159
-
-def circle_area(radius: float) -> float:
-    return PI * radius ** 2
-```
-
-**How to read this example:** A module defines names that another file can import. Keeping the module prefix visible makes a function's origin clear and prevents accidental name collisions.
-
-```python
-# main.py
-import geometry
-
-area = geometry.circle_area(2)
-print(area)
-```
-
-The `geometry.` prefix tells the reader where `circle_area` came from. This namespace also helps avoid collisions when two modules contain functions with the same name. For a small project, `from geometry import circle_area` can be convenient; for a large project, explicit module prefixes often make code provenance clearer.
-
-### Import Styles Are Readability Choices
-
-`import math_utils` keeps the module name visible at each use. `from math_utils import add` makes the imported function shorter to call, but it can be less obvious where `add` came from. An alias such as `import pandas as pd` is useful when the alias is conventional and consistently understood.
-
-Avoid wildcard imports such as `from module import *`: they place an unknown set of names into the current namespace and can overwrite names unexpectedly. Import only what the file uses, and group imports into standard-library, third-party, and project-local sections so dependencies are easy to identify.
-
-### The Main Guard Separates Importing from Running
-
-When Python imports a file, it executes the file's top-level statements. This is why placing a menu loop or test print directly at the top level can unexpectedly run it during an import.
-
-**How to read this example:** The guard runs `main()` only when this file is executed directly. When imported, Python defines the function without starting the application, so the module can serve both as a script and as a reusable source of functions.
-
-```python
-def main() -> None:
-    print("Run the application here.")
-
-if __name__ == "__main__":
-    main()
-```
-
-When the file is executed directly, Python sets `__name__` to `"__main__"` and calls `main()`. When another file imports it, `__name__` is the module's name, so the application does not start automatically. The functions remain available for reuse.
-
-### A Package Organizes Related Modules
-
-A package is a directory that groups modules under a shared name. For example, `budget_manager/models.py` and `budget_manager/reports.py` express that both modules belong to the `budget_manager` package.
-
-**How to read this example:** The package tree groups models, storage, reports, and the entry point under one import path. A one-way dependency lets higher-level application code use lower-level models and utilities without making those reusable modules import the application back.
-
-```text
-budget_manager/
-    __init__.py
-    models.py
-    reports.py
-    main.py
-```
-
-Then project code can use imports such as `from budget_manager.models import Transaction`. The `__init__.py` file marks the directory as a package in the traditional package layout and can be used to define a small public interface. Keep it simple: putting substantial application behavior in `__init__.py` can make imports harder to understand.
-
-### Standard Library Modules Save You from Reinventing Tools
-
-The standard library ships with Python, so it is often the first place to look for common tasks:
-
-- `pathlib.Path` represents filesystem paths and offers readable operations such as `.exists()` and `.mkdir()`.
-- `json` converts between Python data and JSON text.
-- `csv` reads and writes tabular text with correct quoting behavior.
-- `datetime` represents dates and times rather than leaving them as unstructured strings.
-- `collections.Counter` counts repeated values; `defaultdict(list)` creates a list automatically when a new key is first used.
-- `argparse` converts command-line options into validated program arguments.
-
-For example, a `Counter` can summarize transaction categories without a manual dictionary initialization loop:
-
-**How to read this example:** `Counter` tallies repeated values and returns item-count pairs from `most_common()`. This is useful for word or category frequencies without manually updating a dictionary; understand the returned pair structure when displaying or unpacking it.
-
-```python
-from collections import Counter
-
-categories = ["Food", "Transport", "Food", "Food"]
-counts = Counter(categories)
-print(counts.most_common(1))  # [('Food', 3)]
-```
-
-Choosing a standard-library tool makes intent clear and reduces custom code that would otherwise need to be debugged.
-
-### Third-Party Packages Belong to the Project Environment
-
-`uv add requests pandas duckdb` records dependencies for the project and makes them available in its environment. This is different from merely having a package installed somewhere on the computer: another developer needs a manifest or lock file so the project can be recreated.
-
-Install only the libraries the project actually uses. A reproducible environment, clear imports, and a documented run command make it much more likely that the application works on another machine.
-
-### Avoid Circular Imports by Choosing Dependencies Deliberately
-
-A circular import occurs when module A imports module B while module B imports module A. Python may encounter one module before it has finished defining the names the other module expects.
-
-For example, if `models.py` imports a report function from `reports.py` and `reports.py` imports `Transaction` from `models.py`, their responsibilities may be tangled. Often the simpler design is for the report module to depend on the model, while the model does not depend on the report. Draw arrows from the module that uses a service to the module that provides it; a one-way dependency is easier to reason about.
-
-### A Practical Project Layout
-
-**How to read this example:** This example applies the concept of A Practical Project Layout. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
-
-```text
-src/
-    budget_manager/
-        __init__.py
-        models.py       # Transaction and Budget data types
-        storage.py      # JSON or database persistence
-        reports.py      # calculations and report formatting
-        main.py         # command-line flow
-```
-
-This layout is not mandatory for every small script. The goal is not to create many files; it is to make responsibilities easy to locate once the code has enough behavior to justify separation. Start simply, then extract a module when a clear responsibility emerges.

@@ -1,154 +1,318 @@
 # Session XV: Concepts Guide
 ## Web Development with Flask
 
-Build web apps with routes, templates, forms using Flask.
+This session covers how to build a small web application with Flask: routes that map URLs to Python functions, Jinja templates for HTML, forms that are validated before saving, and JSON endpoints for other programs.
 
 ---
 
 ## 1. What Is Flask?
 
-Flask is a lightweight Python web framework. It maps **URLs to Python functions**.
+Flask is a lightweight Python web framework: it maps URLs to Python functions. The browser requests a URL, Flask finds the matching route, runs its function, and sends back what the function returns.
 
-**How to read this example:** `Flask(__name__)` creates the application and its route registry. Route functions return browser responses, and the main guard starts the local development server only when the file is run directly.
+**How to read this example:** `Flask(__name__)` creates the application and its route registry. `@app.route("/")` registers `home()` for the address `/`, and its returned string becomes the response body. The main guard starts the development server only when the file is run directly.
 
 ```python
 from flask import Flask
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def home():
     return "<h1>Hello, World!</h1>"
+
 
 if __name__ == "__main__":
     app.run(debug=True)
 ```
 
-**How to read this example:** The application registers a Python function for a URL and returns its result as an HTTP response. The main guard starts the local server only when the module runs directly.
+### Running the Development Server
 
 ```bash
 $ uv add flask
 $ uv run app.py
-# Open http://127.0.0.1:5000
+ * Running on http://127.0.0.1:5000
 ```
+
+**How to read this example:** `uv add flask` records Flask in the project; `uv run app.py` runs the file, whose main guard calls `app.run()`. Open the printed address in a browser and stop the server with Ctrl+C.
+
+Flask's own command does the same without the main guard:
+
+```bash
+$ uv run flask --app app run --debug
+```
+
+> **Warning:** On macOS, port 5000 is taken by the AirPlay Receiver. Choose another port: `app.run(debug=True, port=5001)` or `uv run flask --app app run --debug --port 5001`.
+
+Debug mode shows detailed errors and reloads the code when you save. Use it **only during development**: its tracebacks reveal your code, and the development server is not built for production traffic.
+
+> Go to **Exercise 1 (Hello Flask)**, where you will create an app with a home route and an `/about` route and run it.
 
 ---
 
 ## 2. Routes and Dynamic URLs
 
-**How to read this example:** The decorator maps a URL to a handler; dynamic parts become function arguments, and converters such as `int` validate a path segment.
+Map URLs to Python functions, including parts of the URL.
+
+### Routes Map Addresses to Behavior
+
+The browser never calls a function directly: it requests a URL and Flask dispatches it to the matching route. A dynamic segment such as `/hello/<name>` passes that part of the URL to the function as an argument.
+
+**How to read this example:** The converter in `<int:expense_id>` makes Flask parse the segment as an integer; `/expenses/abc` does not match and returns 404. `escape()` turns user text into harmless characters, so `/hello/<script>…` cannot inject HTML.
+
+Name URLs after resources: `/expenses` is the list, `/expenses/42` is expense 42, and `/expenses/new` is the form that adds one.
 
 ```python
 from markupsafe import escape
+
 
 @app.route("/hello/<name>")
 def greet(name):
     # escape() blocks HTML injection
     return f"<h1>Hello, {escape(name)}!</h1>"
 
-@app.route("/expense/<int:expense_id>")
+
+@app.route("/expenses/<int:expense_id>")
 def show_expense(expense_id):
     return f"Expense #{expense_id}"
 ```
+
+### Status Codes and 404 for Missing Records
+
+A response has a **status code** as well as a body: `200` OK, `201` created, `400` invalid input, `404` not found. Browsers, API clients, and tests read the code without parsing a sentence.
+
+**How to read this example:** If no expense has the requested id, `abort(404)` stops the function and Flask sends its standard "404 Not Found" page. To choose the message yourself, return a tuple instead: `return "Expense not found", 404`.
+
+```python
+from flask import abort
+
+EXPENSES = [
+    {"id": 1, "category": "Food", "amount": 25.0},
+    {"id": 2, "category": "Transport", "amount": 12.5},
+]
+
+
+@app.route("/expenses/<int:expense_id>")
+def show_expense(expense_id):
+    for e in EXPENSES:
+        if e["id"] == expense_id:
+            return f"{e['category']}: ${e['amount']:.2f}"
+    abort(404)  # no match: 404 Not Found
+```
+
+> Go to **Exercise 2 (Dynamic Routes)**, where you will add a greeting route and an expense detail route that returns 404 for an unknown id.
 
 ---
 
 ## 3. Templates with Jinja2
 
-**How to read this example:** Python supplies records to Jinja, whose loop renders HTML. Separating markup from routing logic makes both easier to maintain.
+Keep HTML in template files and fill it with Python data.
 
-```
+### Templates Separate Presentation from Python Logic
+
+```text
 project/
 ├── app.py
 ├── templates/
 │   ├── base.html
-│   ├── home.html
-│   └── expenses.html
+│   ├── expenses.html
+│   └── add.html
 └── static/
     └── style.css
 ```
 
-**How to read this example:** Python supplies records to Jinja, whose loop renders HTML. Separating markup from routing logic makes both easier to maintain.
+**How to read this example:** `render_template("expenses.html", expenses=EXPENSES)` looks for the file in `templates/` and passes the list to it under the name `expenses`. The route prepares the data; the template decides how it looks.
 
 ```python
 from flask import render_template
 
+
 @app.route("/expenses")
 def expenses():
-    data = [{"category": "Food", "amount": 25}, ...]
-    return render_template("expenses.html", expenses=data)
+    return render_template("expenses.html", expenses=EXPENSES)
 ```
 
-**How to read this example:** Python supplies records to Jinja, whose loop renders HTML. Separating markup from routing logic makes both easier to maintain.
+`EXPENSES` is the list of expense dictionaries from the previous section. Building HTML in templates is clearer than assembling a large string in the route function.
+
+### Template Inheritance and Loops
 
 ```html
-<!-- templates/expenses.html -->
+{# templates/base.html #}
+<!doctype html>
+<html>
+<head><title>Budget App</title></head>
+<body>
+  <h1>Budget App</h1>
+  {% block content %}{% endblock %}
+</body>
+</html>
+```
+
+**How to read this example:** `base.html` holds the layout shared by every page and leaves a named `{% block content %}` empty. A child template `{% extends %}` it and fills only that block.
+
+```html
+{# templates/expenses.html #}
 {% extends "base.html" %}
 {% block content %}
 <table>
   {% for e in expenses %}
-  <tr><td>{{ e.category }}</td><td>${{ e.amount }}</td></tr>
+  <tr>
+    <td>{{ e.category }}</td>
+    <td>${{ "%.2f"|format(e.amount) }}</td>
+  </tr>
   {% endfor %}
 </table>
 {% endblock %}
 ```
 
+`{% for %}` repeats a row per expense and `{{ … }}` prints a value; Jinja escapes printed text by default, so user input is not treated as markup.
+
+> Go to **Exercise 3 (Templates)**, where you will render a list of expenses as an HTML table with a Jinja loop.
+
+### Templates Without Files: render_template_string()
+
+```python
+from flask import render_template_string
+
+FORM = """
+<form method="post">
+  <input name="name" placeholder="Name">
+  <button type="submit">Send</button>
+</form>
+"""
+
+
+@app.route("/contact")
+def contact():
+    return render_template_string(FORM)
+```
+
+**How to read this example:** `render_template_string()` renders a Jinja template stored in a Python string, which is handy for a one-file exercise; real applications keep templates in `templates/`.
+
+> **Warning:** Never build the template string from user input. Pass values as variables instead, so Jinja escapes them: `render_template_string("<p>Hi {{ name }}</p>", name=name)`.
+
 ---
 
 ## 4. Forms and POST Requests
 
-**How to read this example:** GET displays a form; POST submits fields as strings. Convert and validate them before saving, then redirect after success to avoid duplicate submissions on refresh.
+Receive form data, validate it, and redirect.
+
+### GET Shows the Form, POST Submits It
 
 ```python
-from flask import request, redirect, url_for
+from flask import redirect, request, url_for
 
-@app.route("/add", methods=["GET", "POST"])
+
+@app.route("/expenses/new", methods=["GET", "POST"])
 def add_expense():
-    if request.method == "POST":
-        category = request.form["category"]
-        amount = float(request.form["amount"])
-        # Save to database/file...
-        return redirect(url_for("expenses"))
-    return render_template("add.html")
+    if request.method == "GET":
+        return render_template("add.html")
+    category = request.form.get("category", "").strip()
+    amount_text = request.form.get("amount", "").strip()
+    if not category:
+        return "Category is required.", 400
+    try:
+        amount = float(amount_text)
+    except ValueError:
+        return "Amount must be a number.", 400
+    EXPENSES.append({"id": len(EXPENSES) + 1,
+                     "category": category, "amount": amount})
+    return redirect(url_for("expenses"))
 ```
+
+**How to read this example:** GET displays the form in `add.html`; POST sends the fields in `request.form`, always as strings. `.get(…, "")` handles a missing field without a `KeyError`, and `try`/`except` turns `"abc"` into a clear 400 answer instead of a 500 crash. Only valid data is saved.
+
+```html
+{# templates/add.html #}
+{% extends "base.html" %}
+{% block content %}
+<form method="post">
+  <input name="category">
+  <input name="amount">
+  <button>Add</button>
+</form>
+{% endblock %}
+```
+
+> Go to **Exercise 4 (Forms)**, where you will build a form that adds expenses, validating the amount before saving.
+
+### Redirect After a Successful Form Submission
+
+After a successful POST, a redirect asks the browser to make a new GET request to another page. This **Post/Redirect/Get** pattern avoids submitting the form again when the user refreshes the page.
+
+```python
+return redirect(url_for("expenses"))
+```
+
+**How to read this example:** `url_for("expenses")` builds the URL of the route whose function is named `expenses`, and `redirect()` answers with status 302 and that address. Endpoint names keep working if the path changes later.
+
+If validation fails, return a clear message with status 400 (or show the form again with the error) so the user can correct the entry.
+
+> Go to **Exercise 6 (Form + Redirect Flow)**, where you will validate a name and email form and redirect to a success page.
 
 ---
 
 ## 5. JSON API Endpoints
 
-**How to read this example:** `jsonify()` returns structured data for a programmatic client, unlike a rendered HTML page. Stable keys and meaningful status codes make the API predictable.
+Serve structured data to programs instead of HTML pages.
+
+### JSON Routes Serve Programs, Not HTML Pages
+
+`jsonify()` converts Python dictionaries and lists into a JSON response. An HTML route is designed for people using a browser; a JSON route is for another program, a JavaScript frontend, or a data tool.
+
+**How to read this example:** The first route returns the whole list; the second returns one record, or a JSON error with status 404. Keep field names stable so clients can rely on them.
 
 ```python
 from flask import jsonify
 
+
 @app.route("/api/expenses")
 def api_expenses():
-    data = load_expenses()
-    return jsonify(data)
+    return jsonify(EXPENSES)
+
+
+@app.route("/api/expenses/<int:expense_id>")
+def api_expense(expense_id):
+    for expense in EXPENSES:
+        if expense["id"] == expense_id:
+            return jsonify(expense)
+    return jsonify({"error": "Expense not found"}), 404
 ```
+
+### Receiving JSON: request.get_json()
+
+```python
+@app.route("/api/expenses", methods=["POST"])
+def api_create_expense():
+    data = request.get_json(silent=True) or {}
+    category = data.get("category")
+    amount = data.get("amount")
+    if not category or not isinstance(amount, (int, float)):
+        error = "category and a numeric amount are required"
+        return jsonify({"error": error}), 400
+    expense = {"id": len(EXPENSES) + 1,
+               "category": category, "amount": amount}
+    EXPENSES.append(expense)
+    return jsonify(expense), 201
+```
+
+**How to read this example:** `request.get_json(silent=True)` parses the JSON body, or returns `None` when the body is not JSON. The route validates the fields, saves the record, and answers `201 Created` with the new expense.
+
+A browser address bar only sends GET requests; try the POST from Python with Flask's test client:
+
+```python
+client = app.test_client()
+r = client.post("/api/expenses",
+                json={"category": "Gym", "amount": 30})
+print(r.status_code, r.get_json())
+# 201 {'amount': 30, 'category': 'Gym', 'id': 3}
+```
+
+> Go to **Exercise 5 (JSON API)**, where you will add endpoints that list, create, and look up expenses as JSON.
 
 ---
 
-## Quick Reference
-
-**How to read this example:** This example applies the concept of Quick Reference. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
-
-```
-INSTALL     uv add flask
-RUN         app.run(debug=True)
-ROUTE       @app.route("/path")
-TEMPLATE    render_template("file.html", var=value)
-FORM        request.form["field"]  (POST)
-REDIRECT    redirect(url_for("function_name"))
-JSON API    return jsonify(data)
-```
-
----
-
-
----
-
-## 7. Flask Patterns That Scale Better
+## 6. Flask Patterns That Scale Better
 
 A small Flask app is easy to write, but a larger app becomes chaotic without structure. Keep your code separated by role:
 
@@ -157,202 +321,26 @@ A small Flask app is easy to write, but a larger app becomes chaotic without str
 - helper functions manage data logic
 - configuration stays in one place
 
-### Example
-
-**How to read this example:** This example applies the concept of Example. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+This is the same separation you will see again in larger app projects.
 
 ```python
 from flask import Flask, render_template
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def home():
     return render_template("index.html", title="Budget App")
 ```
 
-This keeps the app readable and easier to extend.
-
-> Go to **Exercise 6 (Form + Redirect Flow)** to practice a realistic user flow.
+**How to read this example:** The route only chooses the template and the data it needs; the HTML lives in `templates/index.html`, so the page can be redesigned without touching Python. This keeps the app readable and easier to extend.
 
 ---
 
-## 8. Debugging and Validation in Flask
+## 7. Debugging the Request Flow
 
-When you build a form, check the request method and validate the submitted values before saving data. This prevents invalid entries and confusing behavior.
-
-**How to read this example:** This POST-only route reads an optional form field, trims whitespace, and returns status 400 when required input is blank. Validation at the request boundary prevents invalid data from reaching storage or business logic.
-
-```python
-from flask import request
-from markupsafe import escape
-
-@app.route("/submit", methods=["POST"])
-def submit():
-    name = request.form.get("name", "").strip()
-    if not name:
-        return "Name is required", 400
-    return f"Hello {escape(name)}!"
-```
-
-This is exactly the type of defensive code that turns a demo app into a usable one.
-
-
----
-
-## Deep Dive: What Makes Flask Useful?
-
-Flask is powerful because it allows you to turn Python functions into web endpoints. This means a developer can build a working web app without writing front-end code from scratch.
-
-A simple Flask route might look like this:
-
-**How to read this example:** This route combines request handling, validation, template rendering, and redirecting. A GET displays a page; a POST reads text, rejects an empty category, or redirects on success. Each helper participates in the browser request-response flow.
-
-```python
-from flask import Flask, render_template, request, redirect, url_for
-
-app = Flask(__name__)
-
-@app.route("/expenses", methods=["GET", "POST"])
-def expenses():
-    if request.method == "POST":
-        category = request.form.get("category", "").strip()
-        if not category:
-            return "Category is required", 400
-        return redirect(url_for("expenses"))
-    return render_template("expenses.html")
-```
-
-This example shows a realistic flow:
-
-- receive a form submission
-- validate the input
-- decide whether to continue or reject it
-- redirect the user to a useful next page
-
-That is a website in a very practical sense: request in, validation, response out.
-
-The real strength of Flask is not the syntax alone — it is the way it encourages a clean separation between:
-
-- routing logic
-- templates for presentation
-- helper functions for data processing
-
-This is exactly the kind of architecture you will see again in larger app projects.
-
-
----
-
-## Understanding the Web Request Flow in Flask
-
-Flask connects browser requests to Python functions. The browser requests a URL, Flask finds a matching route, the route function runs, and the function returns a response. That response may be HTML, a redirect, JSON, or an error status.
-
-### Routes Map Addresses to Behavior
-
-The `@app.route(...)` decorator registers a URL pattern. Flask calls the decorated function when a request matches it:
-
-**How to read this example:** The decorator registers the home function for `/`, and its returned string becomes the response body. This is fine for a tiny demonstration; templates are easier to maintain when the page contains more HTML.
-
-```python
-@app.route("/")
-def home():
-    return "<h1>Home</h1>"
-```
-
-The browser does not call `home()` directly. It sends an HTTP request for `/`, and Flask dispatches that request to the function. A dynamic segment such as `/hello/<name>` captures part of the URL and passes it as a function argument. A converter such as `<int:expense_id>` asks Flask to parse that segment as an integer; a non-integer path does not match that route.
-
-Use route names and URL patterns that describe resources or actions clearly. For example, `/expenses/42` can represent expense 42, while a route for adding a record may accept a form submission at `/expenses/new`.
-
-### Templates Separate Presentation from Python Logic
-
-`render_template("expenses.html", expenses=data)` passes values from Python into a Jinja template. The template is responsible for the HTML presentation; the route is responsible for selecting and preparing the data.
-
-**How to read this example:** The route passes records into Jinja, whose loop creates one row for each expense. Python prepares the data while the template controls presentation, so the HTML can change without changing data retrieval.
-
-```python
-@app.route("/expenses")
-def expenses():
-    records = [
-        {"category": "Food", "amount": 25.00},
-        {"category": "Transport", "amount": 12.50},
-    ]
-    return render_template("expenses.html", expenses=records)
-```
-
-**How to read this example:** Python supplies records to Jinja, whose loop renders HTML. Separating markup from routing logic makes both easier to maintain.
-
-```html
-{% for expense in expenses %}
-  <p>{{ expense.category }}: ${{ "%.2f"|format(expense.amount) }}</p>
-{% endfor %}
-```
-
-The loop in the template repeats presentation for each record. This is clearer than constructing a large HTML string in the route function. Flask's template engine also escapes ordinary variable output by default, which helps prevent user-provided text from being interpreted as markup. Avoid marking untrusted text as safe HTML.
-
-### GET and POST Have Different Roles
-
-`GET` is commonly used to display a page or retrieve information. `POST` is commonly used to submit information that may change server state, such as adding an expense. A route can accept both methods and branch on `request.method`:
-
-**How to read this example:** GET displays the form; POST receives submitted values as strings. Convert and validate those values before saving, then redirect after success so refreshing the browser does not resubmit the same transaction.
-
-```python
-@app.route("/add", methods=["GET", "POST"])
-def add_expense():
-    if request.method == "POST":
-        category = request.form.get("category", "").strip()
-        amount_text = request.form.get("amount", "").strip()
-        # Validate and save the submitted values here.
-        return redirect(url_for("expenses"))
-    return render_template("add.html")
-```
-
-On the initial `GET`, the app displays the form. On `POST`, the browser sends submitted fields in `request.form`. Using `.get()` allows the route to handle a missing field explicitly instead of immediately raising `KeyError`. The amount still needs numeric conversion and domain validation: form values arrive as strings.
-
-### Redirect After a Successful Form Submission
-
-After processing a successful `POST`, a redirect asks the browser to make a new `GET` request to another route. This is known as the Post/Redirect/Get pattern. It avoids resubmitting the form if the user refreshes the resulting page.
-
-**How to read this example:** `url_for()` finds the URL registered for the `expenses` endpoint, and `redirect()` asks the browser to navigate there. Endpoint-based links avoid duplicating hard-coded paths and make route changes safer.
-
-```python
-return redirect(url_for("expenses"))
-```
-
-`url_for()` uses the endpoint function name to build the URL, so the route can change without hard-coding its path in every redirect. If validation fails, show a clear message and preserve safe form values where appropriate so the user can correct the entry.
-
-### Return Helpful Status Codes
-
-A route's response includes a status code as well as its body. Successful page requests generally return `200`; an invalid form submission can return `400`; and a missing resource can return `404`.
-
-**How to read this example:** The return tuple contains both a readable explanation and HTTP status 400. Clients and tests can recognize invalid input from the status, while the message explains what needs correction.
-
-```python
-if not category:
-    return "Category is required.", 400
-```
-
-Status codes help browsers, API clients, and automated tests understand the result without interpreting a sentence. The message should still explain what the user can do next.
-
-### JSON Routes Serve Programs, Not HTML Pages
-
-`jsonify()` converts Python dictionaries and lists into a JSON response. This is useful when the caller is another program, a JavaScript frontend, or a data tool:
-
-**How to read this example:** `jsonify()` turns Python records into structured JSON rather than HTML. This is intended for another program or frontend; stable field names let clients consume the result predictably.
-
-```python
-@app.route("/api/expenses")
-def api_expenses():
-    records = load_expenses()
-    return jsonify(records)
-```
-
-An HTML route is designed for people using a browser; a JSON route is designed for clients that want structured fields. Keep the data shape stable and document fields so API clients can rely on them.
-
-### Development Server and Debug Mode
-
-`app.run(debug=True)` is convenient during local development because Flask can show detailed errors and reload code changes. Debug mode must not be exposed in a public production deployment: detailed tracebacks reveal implementation information, and the development server is not designed to serve production traffic.
-
-For real deployment, use a production WSGI server and configure secrets and environment-specific settings outside the source code.
+Follow one request from the browser to the response.
 
 ### Following One Expense Through the App
 
@@ -365,3 +353,19 @@ When someone submits a form, the complete flow is:
 5. A successful request redirects to a page that displays the updated list.
 
 Knowing this sequence helps you debug whether a problem belongs to routing, form parsing, validation, storage, or rendering.
+
+---
+
+## Quick Reference
+
+```
+INSTALL     uv add flask
+RUN         uv run app.py   or   uv run flask --app app run --debug
+DEBUG       app.run(debug=True, port=5001)   (development only)
+ROUTE       @app.route("/expenses/<int:expense_id>")
+TEMPLATE    render_template("file.html", var=value)
+FORM        request.form.get("field", "").strip()   (POST)
+ERRORS      return "message", 400   /   abort(404)
+REDIRECT    redirect(url_for("function_name"))
+JSON API    return jsonify(data), 201   /   request.get_json()
+```
