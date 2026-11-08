@@ -135,9 +135,9 @@ def fetch_data(url: str, params: Optional[dict] = None) -> dict:
 
 | API | URL | Data Type |
 |-----|-----|-----------|
-| REST Countries | `https://restcountries.com/v3.1/all` | Country info |
+| Countries (course dataset, REST Countries format) | `https://raw.githubusercontent.com/ie-tech-university/programming-with-python-i/main/data/countries.json` | Country info |
 | Open-Meteo | `https://api.open-meteo.com/v1/forecast` | Weather data |
-| CoinGecko | `https://api.coingecko.com/api/v3/coins/markets` | Crypto prices |
+| CoinGecko | `https://api.coingecko.com/api/v3/coins/markets?vs_currency=eur` | Crypto prices |
 | JSONPlaceholder | `https://jsonplaceholder.typicode.com/` | Mock data |
 | Universities | `http://universities.hipolabs.com/search` | University list |
 
@@ -241,7 +241,7 @@ import duckdb
 def query_data(filepath: str, sql: str) -> list[tuple]:
     """Run a SQL query against a data file."""
     con = duckdb.connect()
-    result = con.execute(sql).fetchall()
+    result = con.execute(sql, [filepath]).fetchall()
     con.close()
     return result
 
@@ -251,7 +251,7 @@ results = query_data(
     "data/countries.csv",
     """
     SELECT region, COUNT(*) as count, ROUND(AVG(population), 0) as avg_pop
-    FROM 'data/countries.csv'
+    FROM read_csv_auto(?)
     WHERE population > 1000000
     GROUP BY region
     ORDER BY count DESC
@@ -262,24 +262,23 @@ results = query_data(
 ### Dynamic Queries Based on User Input
 
 ```python
-def get_filtered_data(filepath: str, region: str = None, min_pop: int = 0) -> list[tuple]:
-    """Query data with optional filters."""
-    conditions = [f"population >= {min_pop}"]
+def get_filtered_data(filepath: str, region: str | None = None, min_pop: int = 0) -> list[tuple]:
+    """Query data with optional filters (values go in as ? parameters)."""
+    conditions, params = ["population >= ?"], [min_pop]
     if region:
-        conditions.append(f"region = '{region}'")
-
+        conditions.append("region = ?")   # never paste user input into SQL
+        params.append(region)
     where_clause = " AND ".join(conditions)
 
     sql = f"""
         SELECT name, region, population, area
-        FROM '{filepath}'
+        FROM read_csv_auto(?)
         WHERE {where_clause}
         ORDER BY population DESC
         LIMIT 50
     """
-
     con = duckdb.connect()
-    result = con.execute(sql).fetchall()
+    result = con.execute(sql, [filepath, *params]).fetchall()
     con.close()
     return result
 ```
@@ -348,7 +347,8 @@ with tab2:
 @st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_country_data():
     """Fetch and cache country data."""
-    url = "https://restcountries.com/v3.1/all"
+    url = ("https://raw.githubusercontent.com/ie-tech-university/"
+           "programming-with-python-i/main/data/countries.json")
     response = requests.get(url, timeout=10)
     response.raise_for_status()
     return response.json()
@@ -389,13 +389,16 @@ from src.analyzer import get_region_summary, get_top_countries
 
 # ── Configuration ──
 st.set_page_config(page_title="Data Explorer", layout="wide")
+COUNTRIES_URL = ("https://raw.githubusercontent.com/"
+                 "ie-tech-university/programming-with-python-i/"
+                 "main/data/countries.json")
 RAW_PATH = "data/raw/countries.json"
 CSV_PATH = "data/processed/countries.csv"
 
 # ── Data Pipeline ──
 @st.cache_data(ttl=3600)
 def load_data():
-    raw = fetch_with_cache("https://restcountries.com/v3.1/all", RAW_PATH)
+    raw = fetch_with_cache(COUNTRIES_URL, RAW_PATH)
     flat = flatten_countries(raw)
     save_csv(flat, CSV_PATH)
     return flat

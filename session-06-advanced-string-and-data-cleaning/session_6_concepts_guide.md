@@ -480,7 +480,7 @@ Text is stored as **numbers** in memory. An **encoding** maps characters to numb
 ### Reading Files with Encoding
 
 ```python
-# Default encoding (usually UTF-8 on modern systems)
+# Default encoding: depends on the OS (cp1252 on Windows until Python 3.15)
 with open("data.txt", "r") as file:
     content = file.read()
 
@@ -512,11 +512,12 @@ import re
 
 def remove_non_printable(text):
     """Remove non-printable and control characters."""
-    # Keep only printable ASCII + common whitespace
-    return re.sub(r"[^\x20-\x7E\n\t]", "", text)
+    # Remove control characters; keep tab, newline and accents (é, ñ)
+    return re.sub(r"[\x00-\x08\x0B-\x1F\x7F]", "", text)
 
 messy = "Hello\x00World\x07 with\x1b control chars"
 print(remove_non_printable(messy))   # "HelloWorld with control chars"
+print(remove_non_printable("Café\x00 Muñoz"))   # "Café Muñoz"
 ```
 
 ### Normalizing Unicode Characters

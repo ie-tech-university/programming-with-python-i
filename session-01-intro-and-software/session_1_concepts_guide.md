@@ -24,7 +24,7 @@ Before writing a single line of Python, you need four tools installed on your ma
 After installing, open a terminal (Command Prompt on Windows, Terminal on macOS/Linux) and run:
 
 ```bash
-python --version       # Should print Python 3.12+ or similar
+python --version       # Should print Python 3.14.x
 git --version          # Should print git version 2.x.x
 uv --version           # Should print uv 0.x.x
 code --version         # Should print a version number
@@ -54,7 +54,7 @@ Once VS Code is installed, add these extensions (search in the Extensions panel)
 | Virtual environments | Manual: `python -m venv .venv` | Automatic: created on first `uv run` |
 | Project scaffolding | None — you set up everything yourself | `uv init` creates the full project |
 | Lock files | Not built-in | `uv.lock` for reproducible environments |
-| Python version management | Requires `pyenv` separately | Built-in: `uv python install 3.12` |
+| Python version management | Requires `pyenv` separately | Built-in: `uv python install 3.14` |
 
 ### Essential `uv` Commands
 
@@ -80,10 +80,10 @@ Once VS Code is installed, add these extensions (search in the Extensions panel)
 ### Scaffolding a New Project
 
 ```bash
-$ uv init ie-python-course
+$ uv init --no-package ie-python-course
 ```
 
-This single command creates a complete project structure:
+This single command creates a complete project structure (`--no-package` keeps it a simple project with a `main.py`; without it, recent uv versions create a `src/` package instead):
 
 ```
 ie-python-course/
@@ -105,7 +105,7 @@ name = "ie-python-course"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = []
 ```
 
@@ -125,7 +125,7 @@ dependencies = [
 
 ```bash
 $ uv run main.py
-Using CPython 3.13.2
+Using CPython 3.14.4
 Creating virtual environment at: .venv
 Hello from ie-python-course!
 ```
@@ -478,7 +478,7 @@ def calculate_tip(bill: float, tip_percent: float = 18.0) -> float:
 
 # Usage
 print(calculate_tip(85.50))           # 15.39 (default 18%)
-print(calculate_tip(85.50, 20.0))     # 17.10
+print(calculate_tip(85.50, 20.0))     # 17.1
 ```
 
 > Go to **Exercise 3 (Multi-Function Calculator)** where you will build a complete calculator using functions with type hints and docstrings.
@@ -582,7 +582,7 @@ Here is the complete workflow for starting a new Python project professionally:
 
 ```bash
 # 1. Create the project
-$ uv init my-project
+$ uv init --no-package my-project
 $ cd my-project
 
 # 2. Create your source folder
@@ -604,12 +604,13 @@ $ git commit -m "Initial project structure"
 
 # 7. Connect to GitHub and push
 $ git remote add origin https://github.com/yourusername/my-project.git
+$ git branch -M main
 $ git push -u origin main
 ```
 
 This is the foundation you will build on for the entire course.
 
-> Go to **Exercise 4 (Full Project Walkthrough)** where you will set up a complete project from scratch, write modular code, and push it to GitHub.
+> Go to **Exercise 6 (Modular Code & Git Workflow)** where you will set up a complete project from scratch, write modular code, and push it to GitHub.
 
 ---
 

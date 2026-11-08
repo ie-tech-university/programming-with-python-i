@@ -135,7 +135,7 @@ from_list = set([1, 2, 2, 3, 3, 3])   # {1, 2, 3} — duplicates removed
 
 ```python
 emails = ["a@x.com", "b@x.com", "a@x.com", "c@x.com"]
-unique_emails = list(set(emails))
+unique_emails = sorted(set(emails))   # a set has no order
 print(unique_emails)   # ['a@x.com', 'b@x.com', 'c@x.com']
 ```
 

@@ -39,9 +39,12 @@ $ uv run app.py
 **How to read this example:** The decorator maps a URL to a handler; dynamic parts become function arguments, and converters such as `int` validate a path segment.
 
 ```python
+from markupsafe import escape
+
 @app.route("/hello/<name>")
 def greet(name):
-    return f"<h1>Hello, {name}!</h1>"
+    # escape() blocks HTML injection
+    return f"<h1>Hello, {escape(name)}!</h1>"
 
 @app.route("/expense/<int:expense_id>")
 def show_expense(expense_id):
@@ -182,13 +185,14 @@ When you build a form, check the request method and validate the submitted value
 
 ```python
 from flask import request
+from markupsafe import escape
 
 @app.route("/submit", methods=["POST"])
 def submit():
     name = request.form.get("name", "").strip()
     if not name:
         return "Name is required", 400
-    return f"Hello {name}!"
+    return f"Hello {escape(name)}!"
 ```
 
 This is exactly the type of defensive code that turns a demo app into a usable one.

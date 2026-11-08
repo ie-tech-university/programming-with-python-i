@@ -131,13 +131,13 @@ DATA_FILE = "data/budget.json"
 
 def save_transactions(transactions: list[dict]) -> None:
     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-    with open(DATA_FILE, "w") as f:
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(transactions, f, indent=2)
     print(f"Saved {len(transactions)} transactions.")
 
 def load_transactions() -> list[dict]:
     try:
-        with open(DATA_FILE, "r") as f:
+        with open(DATA_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
         print("No existing data found. Starting fresh.")
@@ -225,13 +225,15 @@ if __name__ == "__main__":
 
 ```python
 import csv
+import os
 
 def export_to_csv(transactions: list[dict], filename: str = "data/export.csv") -> None:
     if not transactions:
         print("Nothing to export.")
         return
     fieldnames = ["date", "category", "description", "amount", "is_income"]
-    with open(filename, "w", newline="") as f:
+    os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)   # create data/ if missing
+    with open(filename, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(transactions)
@@ -295,7 +297,7 @@ When your application grows, small issues become expensive:
 
 The solution is always the same: validate early, keep calculations separate, and print clear feedback.
 
-> Go to **Exercise 6 (Budget Alert + Monthly Summary)** to practice the same idea in a realistic setting.
+> Go to **Exercise 6 (Main Application Loop)** to practice the same idea in a realistic setting.
 
 ---
 

@@ -192,7 +192,7 @@ Command-line tools often work with **JSON** or **CSV** files.
 ```python
 import json
 
-with open("expenses.json", "r") as file:
+with open("expenses.json", "r", encoding="utf-8") as file:
     expenses = json.load(file)
 
 print(expenses[0]["category"])
@@ -203,7 +203,7 @@ print(expenses[0]["category"])
 ```python
 import csv
 
-with open("expenses.csv", "r", newline="") as file:
+with open("expenses.csv", "r", newline="", encoding="utf-8") as file:
     reader = csv.DictReader(file)
     for row in reader:
         print(row["category"], row["amount"])

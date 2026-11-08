@@ -23,11 +23,13 @@ The `open()` function takes a filename and a **mode**:
 | `"a"` | Append (add to end) | Yes | No |
 | `"r+"` | Read and write | No (raises error) | No |
 
+> Always add `encoding="utf-8"` when you open a text file, so accents like é or ñ are read and written the same way on Windows, macOS and Linux.
+
 ### Writing to a Text File
 
 ```python
 # Writing — creates the file if it doesn't exist
-file = open("notes.txt", "w")
+file = open("notes.txt", "w", encoding="utf-8")
 file.write("Line 1: Hello, world!\n")
 file.write("Line 2: Python is great.\n")
 file.close()
@@ -37,13 +39,13 @@ file.close()
 
 ```python
 # Reading the entire file at once
-file = open("notes.txt", "r")
+file = open("notes.txt", "r", encoding="utf-8")
 content = file.read()
 print(content)
 file.close()
 
 # Reading line by line (more memory-efficient for large files)
-file = open("notes.txt", "r")
+file = open("notes.txt", "r", encoding="utf-8")
 for line in file:
     print(line.strip())    # .strip() removes the trailing \n
 file.close()
@@ -55,11 +57,11 @@ The `with` statement **automatically closes** the file when the block ends — e
 
 ```python
 # Writing
-with open("notes.txt", "w") as file:
+with open("notes.txt", "w", encoding="utf-8") as file:
     file.write("This file closes automatically.\n")
 
 # Reading
-with open("notes.txt", "r") as file:
+with open("notes.txt", "r", encoding="utf-8") as file:
     for line in file:
         print(line.strip())
 ```
@@ -69,7 +71,7 @@ with open("notes.txt", "r") as file:
 ### Reading Into a List of Lines
 
 ```python
-with open("notes.txt", "r") as file:
+with open("notes.txt", "r", encoding="utf-8") as file:
     lines = file.readlines()    # Returns a list of strings
 
 print(lines)
@@ -84,7 +86,7 @@ print(clean_lines)
 ### Appending to a File
 
 ```python
-with open("log.txt", "a") as file:
+with open("log.txt", "a", encoding="utf-8") as file:
     file.write("New entry added.\n")
 # Adds to the end without erasing existing content
 ```
@@ -103,12 +105,12 @@ The most common file error: trying to read a file that doesn't exist.
 
 ```python
 # This crashes if the file is missing
-with open("data.txt", "r") as file:
+with open("data.txt", "r", encoding="utf-8") as file:
     content = file.read()
 
 # Handle it gracefully
 try:
-    with open("data.txt", "r") as file:
+    with open("data.txt", "r", encoding="utf-8") as file:
         content = file.read()
 except FileNotFoundError:
     print("File not found. Starting with empty data.")
@@ -123,7 +125,7 @@ You can use the `os.path` module to check first:
 import os
 
 if os.path.exists("data.txt"):
-    with open("data.txt", "r") as file:
+    with open("data.txt", "r", encoding="utf-8") as file:
         content = file.read()
 else:
     print("No data file found.")
@@ -143,7 +145,7 @@ def load_data(filename):
         return ""
     
     try:
-        with open(filename, "r") as file:
+        with open(filename, "r", encoding="utf-8") as file:
             return file.read()
     except Exception as e:
         print(f"Error reading file: {e}")
@@ -188,7 +190,7 @@ tasks = [
     {"title": "Read chapter 5", "done": True, "priority": "medium"},
 ]
 
-with open("tasks.json", "w") as file:
+with open("tasks.json", "w", encoding="utf-8") as file:
     json.dump(tasks, file, indent=2)
 ```
 
@@ -214,7 +216,7 @@ This creates a file called `tasks.json` with nicely formatted content:
 ```python
 import json
 
-with open("tasks.json", "r") as file:
+with open("tasks.json", "r", encoding="utf-8") as file:
     tasks = json.load(file)
 
 print(tasks[0]["title"])   # "Buy groceries"
@@ -232,14 +234,14 @@ FILENAME = "data.json"
 
 def save_data(data):
     """Save data to a JSON file."""
-    with open(FILENAME, "w") as file:
+    with open(FILENAME, "w", encoding="utf-8") as file:
         json.dump(data, file, indent=2)
     print(f"Data saved to {FILENAME}.")
 
 def load_data():
     """Load data from a JSON file, or return empty list if missing."""
     try:
-        with open(FILENAME, "r") as file:
+        with open(FILENAME, "r", encoding="utf-8") as file:
             return json.load(file)
     except FileNotFoundError:
         print("No existing data found. Starting fresh.")
@@ -273,7 +275,7 @@ Charlie,30,Paris,85
 ```python
 import csv
 
-with open("students.csv", "r") as file:
+with open("students.csv", "r", encoding="utf-8") as file:
     reader = csv.reader(file)
     header = next(reader)      # Skip the header row
     
@@ -291,7 +293,7 @@ with open("students.csv", "r") as file:
 ```python
 import csv
 
-with open("students.csv", "r") as file:
+with open("students.csv", "r", encoding="utf-8") as file:
     reader = csv.DictReader(file)
     
     for row in reader:
@@ -316,7 +318,7 @@ students = [
     ["Charlie", 30, "Paris", 85],
 ]
 
-with open("output.csv", "w", newline="") as file:
+with open("output.csv", "w", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
     writer.writerow(["name", "age", "city", "score"])    # Header
     writer.writerows(students)                             # All data rows
@@ -334,7 +336,7 @@ students = [
     {"name": "Bob", "age": 25, "city": "London", "score": 78},
 ]
 
-with open("output.csv", "w", newline="") as file:
+with open("output.csv", "w", newline="", encoding="utf-8") as file:
     fieldnames = ["name", "age", "city", "score"]
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
@@ -361,7 +363,7 @@ import json
 def load_and_validate_tasks(filename):
     """Load tasks from JSON and validate the structure."""
     try:
-        with open(filename, "r") as file:
+        with open(filename, "r", encoding="utf-8") as file:
             data = json.load(file)
     except FileNotFoundError:
         print("File not found.")
@@ -401,7 +403,7 @@ def load_and_validate_csv(filename, expected_columns):
     skipped = 0
     
     try:
-        with open(filename, "r") as file:
+        with open(filename, "r", encoding="utf-8") as file:
             reader = csv.reader(file)
             header = next(reader)
             
@@ -439,11 +441,11 @@ import json
 import csv
 
 # Load from JSON
-with open("students.json", "r") as file:
+with open("students.json", "r", encoding="utf-8") as file:
     students = json.load(file)
 
 # Write to CSV
-with open("students.csv", "w", newline="") as file:
+with open("students.csv", "w", newline="", encoding="utf-8") as file:
     writer = csv.DictWriter(file, fieldnames=students[0].keys())
     writer.writeheader()
     writer.writerows(students)
@@ -458,12 +460,12 @@ import csv
 import json
 
 # Load from CSV
-with open("students.csv", "r") as file:
+with open("students.csv", "r", encoding="utf-8") as file:
     reader = csv.DictReader(file)
     students = list(reader)
 
 # Write to JSON
-with open("students.json", "w") as file:
+with open("students.json", "w", encoding="utf-8") as file:
     json.dump(students, file, indent=2)
 
 print("Converted CSV → JSON.")
@@ -489,14 +491,14 @@ DB_FILE = "contacts.json"
 def load_db():
     """Read the entire database from disk."""
     try:
-        with open(DB_FILE, "r") as f:
+        with open(DB_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return {}
 
 def save_db(data):
     """Write the entire database to disk."""
-    with open(DB_FILE, "w") as f:
+    with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 
 def create_contact(name, phone, email):
