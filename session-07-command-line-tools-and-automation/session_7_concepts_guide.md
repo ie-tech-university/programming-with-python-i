@@ -1,4 +1,5 @@
 # Session VII: Concepts Guide
+
 ## Command Line Tools and Automation
 
 This guide covers the Python concepts you will apply throughout the Session VII exercises. Read through the explanations and study the examples **before** attempting the exercises.
@@ -54,6 +55,7 @@ else:
 ## 2. Why `argparse` Is Better Than Manual Parsing
 
 For very small scripts, `sys.argv` is enough. But real tools need:
+
 - optional flags like `--category`
 - automatic help messages
 - type conversion
@@ -123,6 +125,7 @@ if __name__ == "__main__":
 ### Why use `if __name__ == "__main__":`?
 
 This line means:
+
 - run the script normally when executed directly
 - but do **not** run the main program automatically if the file is imported somewhere else
 
@@ -301,6 +304,7 @@ Your Python script does not create the scheduler itself in these exercises. Inst
 ## 8. Designing Good Command-Line Interfaces
 
 A clean command-line tool should:
+
 - have a clear purpose
 - validate input
 - print helpful error messages
