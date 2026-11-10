@@ -1,0 +1,6 @@
+date,category,amount,note
+2026-10-01,Food,18.50,Lunch
+2026-10-02,Transport,2.80,Metro
+2026-10-02,,12.00,Broken row
+2026-10-03,Books,forty,Invalid amount
+2026-10-04,Food,21.30,Dinner
