@@ -1,0 +1,26 @@
+[
+  {
+    "date": "2026-10-01",
+    "category": "Food",
+    "amount": 18.5,
+    "note": "Lunch"
+  },
+  {
+    "date": "2026-10-02",
+    "category": "Transport",
+    "amount": 2.8,
+    "note": "Metro"
+  },
+  {
+    "date": "2026-10-03",
+    "category": "Food",
+    "amount": 21.3,
+    "note": "Dinner"
+  },
+  {
+    "date": "2026-10-04",
+    "category": "Books",
+    "amount": 45.0,
+    "note": "Python book"
+  }
+]
