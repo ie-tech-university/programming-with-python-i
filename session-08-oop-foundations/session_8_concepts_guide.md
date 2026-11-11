@@ -1,13 +1,16 @@
 # Session VIII: Concepts Guide
+
 ## Object-Oriented Programming Foundations
 
 This guide introduces the core ideas of **object-oriented programming (OOP)** in Python. Until now, most of your programs have been **procedural**: a sequence of functions, loops, and variables. In this session, you will begin modeling data and behavior together using **classes** and **objects**.
 
 OOP is useful when your program works with **real-world entities** that have both:
+
 - **data** (attributes)
 - **behavior** (methods)
 
 Examples:
+
 - A `Contact` has a name, phone, and email.
 - A `Student` has a name and scores, and can calculate an average.
 - A `Transaction` has an amount and category, and can format itself as a report line.
@@ -208,6 +211,7 @@ for student in students:
 ```
 
 You can store objects in:
+
 - lists
 - dictionaries
 - sets (if hashable)
@@ -264,6 +268,7 @@ for student in students:
 ```
 
 ### Why this is better
+
 - The logic for a student stays inside the `Student` class.
 - The main program becomes cleaner.
 - You can reuse the class in other programs.
@@ -296,6 +301,7 @@ print(alice)
 ```
 
 Output:
+
 ```python
 Student(name=Alice, scores=[90, 85, 92])
 ```
@@ -309,11 +315,13 @@ This is very useful for debugging and reports.
 ## 8. When to Use OOP
 
 Use OOP when:
+
 - your program has **entities** with both data and behavior
 - you need multiple similar objects
 - you want cleaner organization than loose dictionaries and functions
 
 Examples from this course:
+
 - `Contact` and `ContactBook`
 - `Student` and `GradeBook`
 - `Transaction` and `BudgetLedger`
