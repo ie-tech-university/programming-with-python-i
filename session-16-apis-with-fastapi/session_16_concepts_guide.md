@@ -21,13 +21,17 @@ def root():
     return {"message": "Hello, World!"}
 ```
 
-**How to read this example:** Route decorators register handlers, returned dictionaries become JSON, and Uvicorn serves the app. FastAPI uses the same declarations to generate interactive documentation.
+**How to read this example:** In your own project, `uv add "fastapi[standard]"` installs FastAPI together with Uvicorn and the `fastapi` command (the course repository already declares it, so `uv sync` is enough there). `fastapi dev app.py` serves the app and reloads it when the file changes; `uv run uvicorn app:app --reload` does the same, where `app:app` means file `app.py`, variable `app`.
 
 ```bash
-$ uv add fastapi uvicorn
-$ uvicorn app:app --reload
+$ uv add "fastapi[standard]"
+$ uv run fastapi dev app.py
+# or run Uvicorn directly:
+$ uv run uvicorn app:app --reload
 # Open http://127.0.0.1:8000/docs  (auto-generated API docs!)
 ```
+
+> Go to **Exercise 1 (Hello FastAPI)**, where you will build an app with a root and a `/health` endpoint and explore its `/docs` page.
 
 ---
 
@@ -41,7 +45,10 @@ def get_expense(expense_id: int):
     return {"id": expense_id}
 
 @app.get("/expenses")
-def list_expenses(category: str = None, limit: int = 10):
+def list_expenses(
+    category: str | None = None,
+    limit: int = 10,
+):
     # category and limit are query params
     return {"category": category, "limit": limit}
 ```
@@ -87,18 +94,30 @@ def get_expense(eid: int):
 
 ## 5. Error Handling
 
-**How to read this example:** `HTTPException` returns a deliberate status and detail. A missing record should be a 404 rather than an error object with a success status.
+**How to read this example:** `find_expense()` returns the matching dictionary or `None`. The handler checks `expense is None` and raises `HTTPException`, which FastAPI turns into a 404 response with a `detail` message. A missing record should be a 404 rather than an error object with a success status.
 
 ```python
 from fastapi import HTTPException
 
+EXPENSES = [{"id": 1, "amount": 25.5, "category": "Food"}]
+
+def find_expense(eid: int) -> dict | None:
+    for expense in EXPENSES:
+        if expense["id"] == eid:
+            return expense
+    return None
+
 @app.get("/expenses/{eid}")
 def get_expense(eid: int):
     expense = find_expense(eid)
-    if not expense:
+    if expense is None:
         raise HTTPException(status_code=404, detail="Expense not found")
     return expense
 ```
+
+The update and delete endpoints in section 7 reuse `EXPENSES` and `find_expense()`.
+
+> Go to **Exercise 4 (Error Handling)**, where you will return 404 for unknown IDs and 400 for amounts that are not positive.
 
 ---
 
@@ -106,10 +125,10 @@ def get_expense(eid: int):
 
 | Feature | Flask | FastAPI |
 |---------|-------|---------|
-| Speed | Good | Excellent (async) |
+| Speed | Good; `async` views since Flask 2.0 | Very good; built for `async def` (plain `def` also works, as in this session) |
 | Validation | Manual | Automatic (Pydantic) |
 | API Docs | Manual | Auto-generated |
-| Type Hints | Optional | Required |
+| Type Hints | Optional | Central to validation and docs |
 | Best For | Web apps + APIs | Pure APIs |
 
 ---
@@ -119,13 +138,14 @@ def get_expense(eid: int):
 **How to read this example:** This is an index of FastAPI syntax; the earlier examples explain how methods, parameters, models, errors, and documentation work together.
 
 ```
-INSTALL     uv add fastapi uvicorn
-RUN         uvicorn app:app --reload
+INSTALL     uv add "fastapi[standard]"
+RUN         uv run fastapi dev app.py
 GET         @app.get("/path")
-POST        @app.post("/path")
+POST        @app.post("/path", status_code=201)
+PUT/DELETE  @app.put("/path/{id}")  @app.delete("/path/{id}")
 PATH PARAM  /items/{item_id}
-QUERY PARAM def func(limit: int = 10)
-VALIDATION  Pydantic BaseModel
+QUERY PARAM def func(limit: int = Query(default=10, le=100))
+VALIDATION  Pydantic BaseModel, Field(gt=0)
 DOCS        /docs (Swagger UI) or /redoc
 ERROR       raise HTTPException(status_code=404)
 ```
@@ -139,28 +159,37 @@ ERROR       raise HTTPException(status_code=404)
 
 FastAPI becomes especially powerful when you design endpoints around clearly defined models and data validation rules.
 
-### Example
+### Updating and Deleting Resources
 
-**How to read this example:** This example applies the concept of Example. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+A full CRUD API also changes and removes records. Every field in `ExpenseUpdate` is optional, so a client can send only what changes, such as `{"amount": 30}`.
+
+**How to read this example:** `model_dump(exclude_none=True)` keeps only the fields the client sent, and `dict.update()` changes just those keys, so omitted fields are not erased. Both endpoints reuse `find_expense()` from section 5 and return 404 for an unknown ID.
 
 ```python
-from fastapi import FastAPI
-from pydantic import BaseModel
+class ExpenseUpdate(BaseModel):
+    amount: float | None = None
+    category: str | None = None
 
-app = FastAPI()
+@app.put("/expenses/{eid}")
+def update_expense(eid: int, changes: ExpenseUpdate):
+    expense = find_expense(eid)
+    if expense is None:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    expense.update(changes.model_dump(exclude_none=True))
+    return expense
 
-class Expense(BaseModel):
-    category: str
-    amount: float
-
-@app.post("/expenses")
-def add_expense(expense: Expense):
-    return {"status": "created", "expense": expense.model_dump()}
+@app.delete("/expenses/{eid}")
+def delete_expense(eid: int):
+    expense = find_expense(eid)
+    if expense is None:
+        raise HTTPException(status_code=404, detail="Expense not found")
+    EXPENSES.remove(expense)
+    return {"deleted": eid}
 ```
 
-This pattern prevents invalid payloads before your business logic runs.
+HTTP reserves `PATCH` for partial updates; `@app.patch` works the same way.
 
-> Go to **Exercise 6 (Expense API with Validation)** to build a stronger API design.
+> Go to **Exercise 5 (Full CRUD API (Capstone))**, where you will combine GET, POST, PUT and DELETE in one expense API.
 
 ---
 
@@ -182,26 +211,30 @@ This is why FastAPI is so popular: it makes many of these habits easy to follow.
 
 FastAPI is not just “Flask but with type hints.” It is a framework that turns code contracts into actual validation and documentation.
 
-For example, a request body like this:
+The request model from section 3 is checked before the function body runs. Pydantic v2 validates in *lax* mode by default: a JSON string such as `"12.5"` is converted to the float 12.5, and only text that is not a number, such as `"twelve"`, is rejected with a 422 response.
 
-**How to read this example:** The Pydantic model defines the request body shape, and the endpoint receives a validated object. Its return value forms a JSON response. These declarations support both runtime validation and generated documentation.
+**How to read this example:** `check()` builds each model and reports whether validation passed. `Field(strict=True)` (or the `StrictFloat` type) accepts only real numbers, so the string `"12.5"` is rejected too.
 
 ```python
-from fastapi import FastAPI
-from pydantic import BaseModel
-
-app = FastAPI()
+from pydantic import BaseModel, Field, ValidationError
 
 class Expense(BaseModel):
-    category: str
-    amount: float
+    amount: float                       # lax (default)
 
-@app.post("/expenses")
-def add_expense(expense: Expense):
-    return {"message": "saved", "total": expense.amount}
+class StrictExpense(BaseModel):
+    amount: float = Field(strict=True)  # numbers only
+
+def check(model, value):
+    try:
+        return model(amount=value).amount
+    except ValidationError:
+        return "rejected (422 in FastAPI)"
+
+print(check(Expense, "12.5"))        # 12.5
+print(check(Expense, "twelve"))      # rejected (422 in FastAPI)
+print(check(StrictExpense, "12.5"))  # rejected (422 in FastAPI)
+print(check(StrictExpense, 12.5))    # 12.5
 ```
-
-Now the server validates the payload before the function body runs. If a client sends a string where a float is expected, FastAPI can reject it automatically.
 
 This is a powerful idea because it moves validation to the boundary of the application. That means your internal code can be simpler and more trustworthy. The API becomes a clear contract between client and server:
 
@@ -234,31 +267,31 @@ The function's return value is converted into a JSON response. Keep route functi
 
 ### Path Parameters Identify a Specific Resource
 
-A path parameter is part of the URL itself. In `/expenses/{expense_id}`, the value identifies which expense the client wants:
+A path parameter is part of the URL itself. In `/expenses/{expense_id}` (the section 2 example), the value identifies which expense the client wants.
 
-**How to read this example:** The path placeholder is converted to an integer by its annotation. A URL ending in `/12` passes integer 12; nonnumeric input fails validation before the handler uses it as an identifier.
-
-```python
-@app.get("/expenses/{expense_id}")
-def get_expense(expense_id: int):
-    return {"id": expense_id}
-```
-
-The annotation `int` tells FastAPI to parse and validate the path value. If a client requests `/expenses/not-a-number`, FastAPI returns a validation error rather than passing arbitrary text to code that expects an integer.
+The annotation `int` tells FastAPI to parse and validate the path value: `/expenses/12` passes the integer 12 to the handler. If a client requests `/expenses/not-a-number`, FastAPI returns a 422 validation error rather than passing arbitrary text to code that expects an integer.
 
 ### Query Parameters Filter or Shape a Collection
 
-Query parameters follow the `?` in a URL. They are useful for optional filters, pagination, and sorting:
+Query parameters follow the `?` in a URL. They are useful for optional filters, pagination, and sorting. A request such as `/expenses?category=Food&limit=5` asks for a filtered, limited collection; defaults say what happens when the client omits an option.
 
-**How to read this example:** Category and limit are query parameters because they are function arguments outside the path. A URL such as `/expenses?category=Food&limit=5` requests a filtered subset; defaults make these options optional.
+**How to read this example:** `category` and `limit` are query parameters because they are function arguments that are not in the path. `Query(default=10, ge=1, le=100)` keeps the default and adds bounds, so `/expenses?limit=500` gets a 422 response instead of an unreasonably large answer.
 
 ```python
+from fastapi import Query
+
 @app.get("/expenses")
-def list_expenses(category: str | None = None, limit: int = 10):
-    return {"category": category, "limit": limit}
+def list_expenses(
+    category: str | None = None,
+    limit: int = Query(default=10, ge=1, le=100),
+):
+    result = EXPENSES
+    if category is not None:
+        result = [e for e in result if e["category"] == category]
+    return result[:limit]
 ```
 
-A request such as `/expenses?category=Food&limit=5` asks for a filtered, limited collection. Defaults communicate what should happen when the client omits an option. Production APIs should also place sensible bounds on values such as `limit` so one request cannot ask for an unreasonable amount of data.
+> Go to **Exercise 3 (Path & Query Parameters)**, where you will fetch one expense by ID and filter the list with `?category=Food&min_amount=10`.
 
 ### Pydantic Models Define and Validate Request Bodies
 
@@ -277,24 +310,33 @@ class ExpenseCreate(BaseModel):
 
 The annotation `Field(gt=0)` adds a constraint: an amount must be greater than zero. If the incoming body is missing a required field or violates a constraint, FastAPI returns a validation response before the endpoint's business logic executes.
 
+> Go to **Exercise 6 (Expense API with Validation)**, where you will combine `Field(gt=0)` with a business rule in one endpoint.
+
 This is useful because it puts validation at the application's boundary. Internal code can work with an `ExpenseCreate` object rather than repeatedly checking whether arbitrary dictionary keys exist. Validation is not a replacement for business rules, though: the application may still need to check whether a category is allowed or whether the user has permission to create the record.
 
 ### Response Models Document and Filter Output
 
-A response model describes the fields the endpoint returns:
+A response model describes the fields the endpoint returns. For a collection, wrap the model in `list[...]`:
 
-**How to read this example:** The response model declares the public fields the endpoint promises. FastAPI validates and documents the result; missing required fields reveal a mismatch between the implementation and its contract.
+**How to read this example:** `response_model=list[ExpenseResponse]` promises a list whose items all have the `ExpenseResponse` shape from section 4. FastAPI validates each item, documents the shape in `/docs` and drops fields the model does not declare, so `internal_note` never reaches the client.
 
 ```python
-from pydantic import BaseModel
+STORED = [
+    {"id": 1, "amount": 25.5, "category": "Food",
+     "internal_note": "bank import"},
+]
 
-class ExpenseResponse(BaseModel):
-    id: int
-    amount: float
-    category: str
+@app.get("/expenses", response_model=list[ExpenseResponse])
+def list_expenses():
+    return STORED
+
+# GET /expenses returns:
+# [{"id": 1, "amount": 25.5, "category": "Food"}]
 ```
 
-Using `response_model=ExpenseResponse` documents the shape and helps validate the returned data. It can also prevent internal fields from unintentionally being exposed, provided the response model includes only public fields.
+A response model is a safety net for internal fields only if it lists just the public ones.
+
+> Go to **Exercise 2 (Pydantic Models)**, where you will create expenses with POST and list them with GET.
 
 Request and response models often differ. A client may submit a category and amount, while the server assigns an ID and timestamp. Separate models communicate that difference clearly.
 
@@ -303,22 +345,11 @@ Request and response models often differ. A client may submit a category and amo
 Use status codes to distinguish outcomes:
 
 - `200 OK` commonly indicates a successful read or update.
-- `201 Created` is a clear choice when a new resource has been created.
+- `201 Created` is a clear choice when a new resource has been created: `@app.post("/expenses", status_code=201)`.
 - `404 Not Found` tells the client that the requested identifier has no matching resource.
 - `422 Unprocessable Entity` is commonly returned automatically when request validation fails.
 
-If an item is absent, raise an `HTTPException` rather than returning a success-shaped object:
-
-**How to read this example:** When lookup finds no expense, `HTTPException` returns status 404 and a detail message. Clients can distinguish a missing resource from a successful result without interpreting message text.
-
-```python
-from fastapi import HTTPException
-
-if expense is None:
-    raise HTTPException(status_code=404, detail="Expense not found")
-```
-
-The `detail` field gives the client a useful explanation. Do not return `200` with `{"error": ...}` for a failed operation unless an API contract explicitly requires that pattern; a correct status makes client behavior and monitoring clearer.
+If an item is absent, raise an `HTTPException` (section 5) rather than returning a success-shaped object; its `detail` field gives the client a useful explanation. Do not return `200` with `{"error": ...}` for a failed operation unless an API contract explicitly requires that pattern; a correct status makes client behavior and monitoring clearer.
 
 ### Automatic Documentation Comes from the Contract
 
