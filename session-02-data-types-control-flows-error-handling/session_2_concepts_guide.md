@@ -45,6 +45,9 @@ price = float(price_str)  # 19.99 (float)
 # Number to string
 score = 100
 message = "Your score is " + str(score)
+
+# Anything to bool: empty or zero values are False
+print(bool(""), bool("hi"), bool(0), bool(3))   # False True False True
 ```
 
 ### When Conversion Fails
@@ -52,11 +55,14 @@ message = "Your score is " + str(score)
 Not every string can be converted. This is a very common source of errors:
 
 ```python
-int("hello")    # ValueError: invalid literal for int()
-float(None)     # TypeError: float() argument must be a string or a number
+int("hello")
+# ValueError: invalid literal for int() with base 10: 'hello'
+
+float(None)
+# TypeError: float() argument must be a string or a real number, not 'NoneType'
 ```
 
->> Go to the **Exercise 1 (Messy Sensor Data Cleaner)**, you will handle exactly this problem, a list containing values that may or may not be convertible to `float`.
+> Go to **Exercise 1 (Messy Sensor Data Cleaner)**, where you will handle exactly this problem: a list containing values that may or may not be convertible to `float`.
 
 ---
 
@@ -89,7 +95,8 @@ else:
 | `<=` | Less than or equal | `x <= 5` |
 | `and` | Both must be True | `x > 0 and x < 10` |
 | `or` | At least one must be True | `x < 0 or x > 100` |
-| `not` | Inverts the result | `not x == 5` |
+| `not` | Inverts a boolean | `not is_member` |
+| `a < x < b` | Chained comparison: both must be True | `0 < x < 10` |
 
 ### Nested Conditionals
 
@@ -108,7 +115,7 @@ else:
     print("Regular price")
 ```
 
->> Go to the **Exercise 2 (Transit Kiosk)**, you will use nested conditionals to apply discounts based on both the selected zone *and* the passenger's age.
+> Go to **Exercise 2 (Transit Kiosk Menu Simulator)**, where you will use nested conditionals to apply discounts based on both the selected zone *and* the passenger's age.
 
 ---
 
@@ -135,6 +142,23 @@ for char in "Python":
     print(char)
 ```
 
+### Collecting Results in a List
+
+A loop often builds a new list. Start from an empty list `[]` and call `.append(item)` to add each item at the end:
+
+```python
+readings = ["21.5", "22.0", "19.5"]
+temps = []                       # start with an empty list
+for reading in readings:
+    temps.append(float(reading))  # add one item at the end
+
+print(temps)                     # [21.5, 22.0, 19.5]
+print(len(temps))                # 3
+print(sum(temps) / len(temps))   # 21.0
+```
+
+`len(my_list)` counts the items and `sum(my_list)` adds them up, so `sum(...) / len(...)` gives an average (check first that the list is not empty).
+
 ### `while` Loop — When You Don't Know How Many Iterations
 
 Use `while` when the loop should keep running **until a condition changes**:
@@ -149,7 +173,10 @@ while attempts < max_attempts:
         print("Correct!")
         break           # Exit the loop immediately
     attempts += 1
-    print(f"Wrong. {max_attempts - attempts} attempts left.")
+    print(f"Wrong. Attempts left: {max_attempts - attempts}")
+
+if attempts == max_attempts:
+    print("No attempts left. The number was 7.")
 ```
 
 ### Key Loop Keywords
@@ -167,7 +194,7 @@ for num in range(10):
     print(num)          # Only prints: 1, 3, 5, 7, 9
 ```
 
-> Go to the **Exercise 3 (Three-Strike Quiz)**, you will use a `while` loop with a counter and `break`.
+> Go to **Exercise 3 (Three-Strike Quiz System)**, where you will use a `while` loop with a counter and `break`.
 
 ---
 
@@ -222,19 +249,21 @@ except (ValueError, TypeError):
 
 ```python
 try:
-    file = open("data.txt", "r")
+    with open("data.txt", encoding="utf-8") as file:
+        content = file.read()
 except FileNotFoundError:
     print("File not found!")
 else:
     # This runs ONLY if no exception occurred
-    content = file.read()
     print(content)
 finally:
     # This runs NO MATTER WHAT (useful for cleanup)
     print("Operation complete.")
 ```
 
-> Error handling is the **central theme** of this entire session. You'll use it in every exercise, but especially in the **Exercise 4 (BMI Refactoring)**.
+`with open(...) as file:` closes the file automatically when its block ends, even if an error happens. Releasing resources such as open files is the **cleanup** that `with` and `finally` are for. Session 5 covers file I/O in depth.
+
+> Error handling is the **central theme** of this entire session. You'll use it in every exercise, but especially in **Exercise 4 (Refactoring Repetitive Logic)**.
 
 ---
 
@@ -245,7 +274,7 @@ Functions let you **organize your code** into reusable, named blocks. This is th
 ### Defining and Calling a Function
 
 ```python
-def greet(name):
+def greet(name: str) -> None:
     """Print a personalized greeting."""
     print(f"Hello, {name}! Welcome to Python I.")
 
@@ -256,7 +285,7 @@ greet("Bob")        # Hello, Bob! Welcome to Python I.
 ### Parameters, Arguments, and Return Values
 
 ```python
-def calculate_area(width, height):
+def calculate_area(width: float, height: float) -> float:
     """Calculate and return the area of a rectangle."""
     area = width * height
     return area         # Send the result back to the caller
@@ -270,7 +299,7 @@ print(f"The area is {result}")    # The area is 15
 You can provide a default value so the argument becomes optional:
 
 ```python
-def power(base, exponent=2):
+def power(base: float, exponent: int = 2) -> float:
     """Raise base to the given exponent (default: squared)."""
     return base ** exponent
 
@@ -283,7 +312,7 @@ print(power(5, 3))    # 125
 **Before** (repetitive and fragile):
 
 ```python
-# Calculating tax for 3 products — copy-pasted logic
+# Calculating tax for 2 products — copy-pasted logic
 price1 = 100
 tax1 = price1 * 0.21
 total1 = price1 + tax1
@@ -298,16 +327,50 @@ print(f"Total: {total2}")
 **After** (clean and reusable):
 
 ```python
-def calculate_total(price, tax_rate=0.21):
+def calculate_total(price: float, tax_rate: float = 0.21) -> float:
     """Calculate price + tax."""
     tax = price * tax_rate
     return round(price + tax, 2)
 
-print(f"Total: {calculate_total(100)}")     # 121.0
-print(f"Total: {calculate_total(250)}")     # 302.5
+print(f"Total: {calculate_total(100)}")     # Total: 121.0
+print(f"Total: {calculate_total(250)}")     # Total: 302.5
 ```
 
-> Go to the **Exercise 5 (Universal Unit Converter)**, you will design an entire program organized around multiple functions.
+> Go to **Exercise 4 (Refactoring Repetitive Logic)**, where you will turn repeated BMI calculations into one function that handles `ZeroDivisionError` and `TypeError`.
+
+### More Function Tools: `raise` and Returning Two Values
+
+**Raising your own error**
+
+```python
+def withdraw(balance: float, amount: float) -> float:
+    """Return the balance after the withdrawal."""
+    if amount <= 0:
+        raise ValueError("Amount must be positive.")
+    return balance - amount
+
+try:
+    withdraw(100, -5)
+except ValueError as error:
+    print(f"Error: {error}")   # Error: Amount must be positive.
+```
+
+`raise ValueError("…")` stops the function and signals a problem to the caller, who can catch it with `try/except`. `except ValueError as error` stores the exception so you can print its message.
+
+**Returning two values**
+
+```python
+def min_max(numbers: list[float]) -> tuple[float, float]:
+    """Return the smallest and the largest number."""
+    return min(numbers), max(numbers)
+
+low, high = min_max([4, 9, 1])
+print(low, high)   # 1 9
+```
+
+`return a, b` sends both values back together as a **tuple**; the caller unpacks them into two variables. The type hint is `tuple[float, float]`.
+
+> Go to **Exercise 5 (Universal Unit Converter)**, where you will design an entire program around several functions that raise `ValueError` for impossible values.
 
 ---
 
@@ -319,7 +382,8 @@ User input is **unreliable**. People type extra spaces, mix upper and lowercase,
 
 ```python
 raw = "   PaRiS   "
-clean = raw.strip().lower()    # "paris"
+clean = raw.strip().lower()
+print(clean)    # paris
 ```
 
 | Method | What It Does | Example |
@@ -359,7 +423,7 @@ print(f"Has uppercase: {has_upper}")   # True
 print(f"Has digit: {has_digit}")       # True
 ```
 
-> Go to the  **Exercise 6 (Password Validator)**, you'll loop through a string checking each character's properties.
+> Go to **Exercise 6 (Password Strength Validator)**, where you will loop through a string checking each character's properties and return a score and a label.
 
 ---
 
@@ -384,7 +448,7 @@ print(student["age"])        # 22
 
 ```python
 student["email"] = "alice@university.edu"   # Add new key
-student["grade"] = "A+"                      # Update existing key
+student["grade"] = "A+"                     # Update existing key
 ```
 
 ### Looping Through a Dictionary
@@ -411,8 +475,15 @@ elif zone == 3:
 
 # Clean and scalable
 prices = {1: 2.50, 2: 4.00, 3: 6.50}
-price = prices[zone]
+price = prices[zone]   # KeyError if zone is 4!
+
+# Safer: .get(key, default) never raises
+print(prices.get(2, 0.0))   # 4.0
+print(prices.get(4))        # None
+print(prices.get(4, 0.0))   # 0.0
 ```
+
+`prices[key]` raises `KeyError` when the key is missing. `prices.get(key)` returns `None` instead, and `prices.get(key, default)` returns your default.
 
 ### Accumulating Data with Dictionaries
 
@@ -431,21 +502,50 @@ for category in expenses:
 print(counts)   # {'Food': 3, 'Transport': 1, 'Entertainment': 1}
 ```
 
-> Go to the  **Exercise 7 (Multi-Round Quiz)**, questions are stored as a list of dictionaries.
+### A List of Dictionaries
+
+Real programs store many records of the same shape. Put one dictionary per record inside a list: the list keeps them in order, and each dictionary names its fields.
+
+```python
+expenses = [
+    {"amount": 12.5, "category": "food"},
+    {"amount": 30.0, "category": "transport"},
+]
+expenses.append({"amount": 8.0, "category": "food"})
+
+total = 0
+for expense in expenses:
+    print(expense["category"], expense["amount"])
+    total += expense["amount"]
+print(f"{len(expenses)} expenses, total {total}")
+# food 12.5
+# transport 30.0
+# food 8.0
+# 3 expenses, total 50.5
+```
+
+Loop over the list to get one dictionary at a time, then read its fields with `record["key"]`. Add a new record with `.append({...})`.
+
+> Go to **Exercise 7 (Multi-Round Scoring Quiz (with Data Structures))**, where the questions are stored as a list of dictionaries.
 
 ---
 
 ## 8. Putting It All Together: Defensive Programming Patterns
 
-The exercises in this session combine all of the above concepts into **defensive programs** — programs that never crash, no matter what the user types. Here is the general pattern you'll use repeatedly:
+The exercises in this session combine all of the above concepts into **defensive programs**: programs that handle whatever the user types without crashing. Here is the general pattern you'll use repeatedly.
+
+> Defensive does not mean unstoppable: pressing Ctrl+C still raises `KeyboardInterrupt`, and closing the input with Ctrl+D (Ctrl+Z then Enter on Windows) raises `EOFError`. That is how a user stops a program on purpose.
 
 ```python
-def get_valid_number(prompt):
-    """Keep asking until the user enters a valid number."""
+import math
+
+
+def get_valid_number(prompt: str) -> float:
+    """Keep asking until the user enters a positive number."""
     while True:
         try:
             value = float(input(prompt))
-            if value < 0:
+            if not math.isfinite(value) or value <= 0:
                 print("Error: Please enter a positive number.")
                 continue
             return value
@@ -453,7 +553,7 @@ def get_valid_number(prompt):
             print("Error: That's not a valid number. Try again.")
 
 
-def main():
+def main() -> None:
     """Main menu loop."""
     while True:
         print("\n=== MAIN MENU ===")
@@ -474,37 +574,42 @@ def main():
         else:
             print("Invalid option. Please try again.")
 
-main()
+
+if __name__ == "__main__":
+    main()
 ```
 
 This pattern combines:
--  A `while True` loop for the main menu
+- A `while True` loop for the main menu
 - `try/except` for safe type conversion
 - `.strip().lower()` for clean input handling
 - `break` and `continue` for flow control
 - Functions to organize logic into reusable pieces
 - Conditionals for menu routing and validation
+- `math.isfinite()` to reject `nan` and `inf`, which `float()` accepts
+- `if __name__ == "__main__":` (from Session 1) so the menu starts only when you run the file
 
->> Go to the  **Exercise 8 (Expense Tracker)** is the capstone exercise where you will combine all of these patterns into a single, fully functional application.
+> Go to **Exercise 8 (Expense Tracker with Category Reports)**, the capstone exercise, where you will combine all of these patterns into a single, fully functional application.
 
 ---
 
 ## Quick Reference Cheat Sheet
 
 ```
-┌──────────────────────────────────────────────────────┐
-│  TYPE CONVERSION     int()  float()  str()  bool()   │
-│  CONDITIONALS        if / elif / else                 │
-│  LOOPS               for ... in    while              │
-│  LOOP CONTROL        break   continue                 │
-│  ERROR HANDLING      try / except / else / finally    │
-│  FUNCTIONS           def name(params): return value   │
-│  STRING CLEANING     .strip()  .lower()  .upper()    │
-│  STRING CHECKING     .isdigit() .isalpha() .isupper() │
-│  DICT ACCESS         d[key]   d.get(key, default)    │
-│  DICT ITERATION      for k, v in d.items():          │
-│  FORMATTING          f"Value: {x:.2f}"               │
-└──────────────────────────────────────────────────────┘
+TYPE CONVERSION     int()  float()  str()  bool()
+CONDITIONALS        if / elif / else
+LOOPS               for ... in    while
+LOOP CONTROL        break   continue
+ERROR HANDLING      try / except / else / finally
+RAISING ERRORS      raise ValueError("message")
+FUNCTIONS           def name(params): return value
+MULTIPLE RETURNS    return a, b   →   x, y = f()
+STRING CLEANING     .strip()  .lower()  .upper()
+STRING CHECKING     .isdigit() .isalpha() .isupper()
+LISTS               lst.append(x)   len(lst)   sum(lst)
+DICT ACCESS         d[key]   d.get(key, default)
+DICT ITERATION      for k, v in d.items():
+FORMATTING          f"Value: {x:.2f}"
 ```
 
 ---

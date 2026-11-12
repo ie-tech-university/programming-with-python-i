@@ -7,7 +7,7 @@ Load, filter, group, aggregate, merge data with pandas and DuckDB SQL.
 
 ## 1. pandas Basics
 
-**How to read this example:** `read_csv()` creates a DataFrame. Shape, dtypes, a sample, and descriptive statistics answer different inspection questions and help catch source-data issues before analysis.
+**How to read this example:** `read_csv()` creates a DataFrame. Shape, dtypes, a sample, and descriptive statistics answer different inspection questions and help catch source-data issues before analysis. The sample file `expenses.csv` is in this session's folder.
 
 ```python
 import pandas as pd
@@ -18,6 +18,8 @@ print(df.dtypes)     # column types
 print(df.head())     # first 5 rows
 print(df.describe()) # statistics
 ```
+
+> Go to **Exercise 1 (Load and Explore)**, where you will build the sample DataFrame and inspect it with `shape`, `dtypes`, `head()` and `describe()`.
 
 ---
 
@@ -55,6 +57,8 @@ summary = df.groupby("category").agg(
 ).sort_values("total", ascending=False)
 ```
 
+> Go to **Exercise 3 (Group & Aggregate)**, where you will summarize spending per category and find the top spender.
+
 ---
 
 ## 4. Adding & Transforming Columns
@@ -67,21 +71,31 @@ df["total"] = df["amount"] + df["tax"]
 df["month"] = pd.to_datetime(df["date"]).dt.month
 ```
 
+> Go to **Exercise 2 (Filter & Transform)**, where you will filter Food expenses over $40 and add tax and month columns.
+
 ---
 
 ## 5. Merging DataFrames
 
-**How to read this example:** This example applies the concept of 5. Merging DataFrames. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+**How to read this example:** Spending is summed per category first, so each total is compared with that category's budget rather than with single transactions. The left merge keeps categories that have no budget; their budget is `NaN` and `>` quietly returns `False`, so the code lists them explicitly instead of letting them pass as within budget.
 
 ```python
+spent = df.groupby("category", as_index=False)["amount"].sum()
+
 categories = pd.DataFrame({
     "category": ["Food", "Transport"],
     "budget": [500, 200]
 })
 
-merged = df.merge(categories, on="category", how="left")
+merged = spent.merge(categories, on="category", how="left")
 merged["over_budget"] = merged["amount"] > merged["budget"]
+
+# NaN budget makes over_budget False: report those categories
+no_budget = merged[merged["budget"].isna()]
+print("No budget set for:", no_budget["category"].tolist())
 ```
+
+> Go to **Exercise 5 (Merge & Report (Capstone))**, where you will compare each category's total spending with its budget and print a report.
 
 ---
 
@@ -105,6 +119,8 @@ print(result.df())  # Returns a pandas DataFrame
 duckdb.sql("SELECT * FROM df WHERE amount > 100").show()
 ```
 
+> Go to **Exercise 4 (DuckDB Queries)**, where you will repeat the filters and summaries of Exercises 2 and 3 in SQL.
+
 ---
 
 ## 7. pandas vs DuckDB
@@ -113,7 +129,7 @@ duckdb.sql("SELECT * FROM df WHERE amount > 100").show()
 |------|--------|--------|
 | Load CSV | `pd.read_csv()` | `FROM 'file.csv'` |
 | Filter | `df[df["x"]>5]` | `WHERE x > 5` |
-| Group | `df.groupby().sum()` | `GROUP BY` |
+| Group | `df.groupby("x")["y"].sum()` | `SUM(y) … GROUP BY x` |
 | Join | `df.merge()` | `JOIN` |
 | Syntax | Python methods | SQL |
 
@@ -158,7 +174,7 @@ A good data analyst should always check:
 - are there duplicates or inconsistent labels?
 - do the results match the domain reality?
 
-> Go to **Exercise 6 (Data Cleaning + Summary Pipeline)** to practice a complete workflow.
+> Go to **Exercise 6 (Data Cleaning + Summary Pipeline)**, where you will practice a complete workflow.
 
 ---
 
@@ -228,7 +244,7 @@ print(df.dtypes)
 print(df.head())
 ```
 
-`shape` tells you how many rows and columns you are working with. `dtypes` can reveal that an amount column was read as `object` because one row contains text such as `"unknown"`. `head()` provides a small sample; it is a quick inspection, not proof that every row is correct.
+`shape` tells you how many rows and columns you are working with. `dtypes` can reveal that an amount column was read as text (`str` in pandas 3, `object` in older versions) because one row contains text such as `"unknown"`. `head()` provides a small sample; it is a quick inspection, not proof that every row is correct.
 
 For a fuller quality check, count missing values with `df.isna().sum()` and look for repeated rows with `df.duplicated().sum()`. These checks help you discover data issues before they distort a calculation.
 
@@ -246,8 +262,6 @@ large_expenses = df[df["amount"] > 100]
 The expression `df["amount"] > 100` creates a Boolean value for each row. Pandas uses that Boolean series as a mask and keeps the rows where the condition is true.
 
 For multiple conditions, use `&` for AND and `|` for OR, and put parentheses around each comparison:
-
-**How to read this example:** Selecting two columns focuses the table on needed fields; the Boolean mask keeps rows whose amounts exceed 100. Separating field selection from row filtering makes each operation easier to understand.
 
 ```python
 large_food = df[(df["category"] == "Food") & (df["amount"] > 50)]
@@ -288,8 +302,6 @@ This is called vectorized computation: pandas applies the arithmetic across the 
 
 Dates need explicit conversion before accessing date components:
 
-**How to read this example:** The assignments use vectorized arithmetic to calculate tax and tax-inclusive totals for each row without an explicit Python loop. Ensure the amount column is numeric so the multiplication has the intended meaning.
-
 ```python
 df["date"] = pd.to_datetime(df["date"], errors="coerce")
 df["month"] = df["date"].dt.month
@@ -307,7 +319,7 @@ Type conversion and missing-value handling are not merely technical chores. They
 df["amount"] = pd.to_numeric(df["amount"], errors="coerce")
 ```
 
-This converts numeric text such as `"40"` to a number and marks invalid entries as missing. You then need to decide what a missing amount means. Dropping an invalid row may be appropriate for a narrow summary, but it can hide how much data was discarded. Filling it with zero is only correct when “missing” genuinely means “no amount”; often it does not.
+This converts numeric text such as `"40"` to a number and marks invalid entries as missing. You then need to decide what a missing amount means. Dropping an invalid row may be appropriate for a narrow summary, but it can hide how much data was discarded. Filling it with zero (`fillna(0)`) is only correct when “missing” genuinely means “no amount”; often it does not.
 
 Standardizing labels is similarly meaningful: `"Food"`, `"food"`, and `" Food "` may refer to the same category, but normalization should reflect the actual domain rather than merging distinct labels carelessly.
 
@@ -318,14 +330,15 @@ A merge combines rows using a shared key, similar to a relational database join:
 **How to read this example:** The merge matches category-level spending with budget values. A left join preserves unmatched spending categories, while duplicate budget keys can multiply rows. Compare budgets and spending at the same time and category granularity.
 
 ```python
-merged = expenses.merge(
-    category_budgets,
+spent = df.groupby("category", as_index=False)["amount"].sum()
+merged = spent.merge(
+    categories,
     on="category",
     how="left",
 )
 ```
 
-A left join preserves every expense row and attaches a budget where one matches. Categories without a budget receive missing values. An inner join would discard expenses without a matching budget, which may be undesirable if you want to find uncategorized or unbudgeted spending.
+A left join keeps every row of the left table, here one spending total per category, and attaches a budget where one matches. Categories without a budget receive missing values (`NaN`). An inner join would discard them, which may be undesirable if you want to find unbudgeted spending.
 
 Before merging, check that the key columns use compatible formats and that the lookup table has the expected number of rows per key. Duplicate keys on the right side can multiply rows and inflate totals.
 
@@ -333,7 +346,7 @@ Before merging, check that the key columns use compatible formats and that the l
 
 DuckDB allows the same kind of filtering, grouping, and joining with SQL:
 
-**How to read this example:** The query reads a CSV, filters nonpositive amounts, groups remaining rows by category, sums them, and sorts totals descending. Each SQL clause defines which records contribute to the answer, paralleling pandas filtering and aggregation.
+**How to read this example:** The query reads a CSV, excludes zero or negative amounts, groups the remaining rows by category, sums them, and sorts totals descending. Each SQL clause defines which records contribute to the answer, paralleling pandas filtering and aggregation.
 
 ```sql
 SELECT category, SUM(amount) AS total

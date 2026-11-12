@@ -1,7 +1,9 @@
 # Session XI: Concepts Guide
 ## Python I Foundations Review
 
-This session is a **comprehensive review** of every concept from Sessions I–X. Use it as a quick-reference cheat sheet before the second half of the course.
+This session is a **comprehensive review** of the core concepts from Sessions I–IX, the same building blocks you combined in the Session X Budget Manager lab. Use it as a quick-reference cheat sheet before the second half of the course.
+
+> Go to **Exercise 5 (Integrated project)**, where you will combine a class, regex validation, JSON files and a grouped report in a Contact Manager, just as the Session X lab did.
 
 ---
 
@@ -40,16 +42,21 @@ price = float("19.99") # str -> float
 **How to read this example:** The conditional checks thresholds in order; the `for` loop visits a known collection, and the `while` loop repeats until state changes. `break` exits and `continue` skips the current iteration.
 
 ```python
-if score >= 90:    grade = "A"
-elif score >= 80:  grade = "B"
-else:              grade = "C"
+if score >= 90:
+    grade = "A"
+elif score >= 80:
+    grade = "B"
+else:
+    grade = "C"
 
 for item in collection:
     process(item)
 
 while condition:
-    if done: break
-    if skip: continue
+    if done:
+        break
+    if skip:
+        continue
 ```
 
 ---
@@ -70,6 +77,8 @@ else:
 finally:
     print("Always runs")
 ```
+
+> Go to **Exercise 1 (Type Conversion & Error Handling)**, where you will convert a mixed list with `float()` and count the values that fail.
 
 ---
 
@@ -94,6 +103,10 @@ def calculate_total(price: float, tax_rate: float = 0.21) -> float:
 | `set`     | Yes     | No      | No         | Unique   |
 | `dict`    | Yes     | Yes*    | Keys: No   | Lookup   |
 
+\* Since Python 3.7, a `dict` keeps its keys in insertion order. A `set` has no guaranteed order.
+
+> Go to **Exercise 2 (Data Structures & Comprehensions)**, where you will choose a list, a set and a dict to answer three questions about nested student records.
+
 ---
 
 ## 7. Pythonic Idioms (Session IV)
@@ -111,15 +124,18 @@ students.sort(key=lambda s: s["grade"], reverse=True)
 
 ## 8. File I/O (Session V)
 
-**How to read this example:** Context managers handle file lifetime; JSON represents nested data, while `DictReader` maps CSV columns to keys. The mode determines whether a file is read or overwritten.
+**How to read this example:** Context managers handle file lifetime; JSON represents nested data, while `DictReader` maps CSV columns to keys. The mode determines whether a file is read or overwritten. `encoding="utf-8"` keeps accented text identical on every operating system, and the `csv` module needs `newline=""` to handle line breaks inside quoted fields.
 
 ```python
-import json, csv
+import csv
+import json
 
-with open("data.json", "w") as f: json.dump(data, f, indent=2)
-with open("data.json", "r") as f: data = json.load(f)
+with open("data.json", "w", encoding="utf-8") as f:
+    json.dump(data, f, indent=2)
+with open("data.json", "r", encoding="utf-8") as f:
+    data = json.load(f)
 
-with open("data.csv", "r") as f:
+with open("data.csv", "r", newline="", encoding="utf-8") as f:
     rows = list(csv.DictReader(f))
 ```
 
@@ -127,14 +143,22 @@ with open("data.csv", "r") as f:
 
 ## 9. Strings & Regex (Session VI)
 
-**How to read this example:** String methods normalize whitespace and case; regular expressions find or replace text matching a pattern. A regex match checks shape, not whether a value is real or deliverable.
+**How to read this example:** String methods normalize whitespace and case; regular expressions find or replace text matching a pattern. A regex match checks shape, not whether a value is real or deliverable. `\w` matches letters in any alphabet, so `[^\w\s]` removes punctuation but keeps é and à; a class such as `[^a-zA-Z0-9\s]` would turn the text into `caf djvu`.
 
 ```python
 import re
+
+raw = "  Café, déjà-vu!  "
 clean = raw.strip().lower()
-emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', text)
-cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+print(clean)                          # café, déjà-vu!
+print(re.sub(r"[^\w\s]", "", clean))  # café déjàvu
+
+text = "Write to ana@ie.edu or bo@uni.es"
+emails = re.findall(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
+print(emails)                         # ['ana@ie.edu', 'bo@uni.es']
 ```
+
+> Go to **Exercise 3 (File I/O & String Cleaning)**, where you will clean names, validate emails with a regex and reject bad ages in a messy CSV.
 
 ---
 
@@ -154,25 +178,73 @@ args = parser.parse_args()
 
 ## 11. OOP (Sessions VIII-IX)
 
-**How to read this example:** The initializer stores object state, methods use it, and class/static methods are for operations that do not need an instance. Inheritance lets `Dog` reuse initialization with `super()`.
+**How to read this example:** The initializer stores object state, methods use it, and class/static methods are for operations that do not need an instance. Inheritance lets `Dog` reuse initialization with `super()`. Because `Dog.__init__` expects a breed, `Dog` overrides `from_dict`; the inherited version would silently store the sound as the breed.
 
 ```python
 class Animal:
     def __init__(self, name: str, sound: str):
         self.name = name
         self._sound = sound
+
     def speak(self) -> str:
         return f"{self.name} says {self._sound}!"
+
     @classmethod
-    def from_dict(cls, d): return cls(d["name"], d["sound"])
+    def from_dict(cls, d: dict) -> Animal:
+        return cls(d["name"], d["sound"])
+
     @staticmethod
-    def is_valid(name): return bool(name) and name[0].isupper()
+    def is_valid(name: str) -> bool:
+        return bool(name) and name[0].isupper()
+
 
 class Dog(Animal):
-    def __init__(self, name, breed):
+    def __init__(self, name: str, breed: str):
         super().__init__(name, "Woof")
         self.breed = breed
+
+    @classmethod
+    def from_dict(cls, d: dict) -> Dog:
+        # Dog.__init__ takes a breed, not a sound
+        return cls(d["name"], d["breed"])
+
+
+rex = Dog.from_dict({"name": "Rex", "breed": "Beagle"})
+print(rex.speak(), rex.breed)  # Rex says Woof! Beagle
+print(Animal.is_valid("rex"))  # False
 ```
+
+### Properties and Special Methods
+
+**How to read this example:** `@property` exposes a computed value as an attribute, so you write `focus.is_empty` without parentheses. `__len__` makes `len(focus)` work, and `__repr__` returns the developer-facing text that `print()` and lists show when the class has no `__str__`.
+
+```python
+class Playlist:
+    def __init__(self, name: str):
+        self.name = name
+        self._songs: list[str] = []
+
+    def add(self, song: str) -> None:
+        self._songs.append(song)
+
+    @property
+    def is_empty(self) -> bool:
+        return not self._songs
+
+    def __len__(self) -> int:
+        return len(self._songs)
+
+    def __repr__(self) -> str:
+        return f"Playlist(name={self.name!r}, songs={len(self)})"
+
+
+focus = Playlist("Focus")
+focus.add("Intro")
+print(len(focus), focus.is_empty)  # 1 False
+print(focus)                       # Playlist(name='Focus', songs=1)
+```
+
+> Go to **Exercise 4 (OOP & Patterns)**, where you will build `Book` and `Library` classes with a property, `__len__` and `__repr__`.
 
 ---
 
@@ -189,9 +261,9 @@ FUNCTIONS   def name(p: type) -> rtype: return
 STRUCTURES  list  tuple  set  dict  nested
 IDIOMS      comprehensions  zip  enumerate  lambda
 FILE I/O    json.dump/load  csv.DictReader/Writer
-STRINGS     strip  lower  split  join  re.match
+STRINGS     strip  lower  split  join  re.findall  re.sub
 CLI         argparse  ArgumentParser
-OOP         class  __init__  inheritance  super()
+OOP         class  __init__  super()  @property  __repr__
 ```
 
 ---
@@ -199,13 +271,13 @@ OOP         class  __init__  inheritance  super()
 
 ---
 
-## 9. Review Habits That Make You a Better Developer
+## 12. Review Habits That Make You a Better Developer
 
 The goal of a review session is not only to check what works, but also to understand why it works and how to improve it. Good code is usually not the largest code; it is the code that is easier to read, test, and extend.
 
 ### A Simple Review Framework
 
-**How to read this example:** This example applies the concept of A Simple Review Framework. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+**How to read this example:** These comments are a checklist, not a program: answer the five questions before you call a feature finished. Section 16 applies each one to real code.
 
 ```python
 # Ask five questions before finishing a feature:
@@ -230,7 +302,7 @@ Refactoring is not about perfection; it is about clarity and maintainability.
 
 ---
 
-## 10. Debugging Strategy
+## 13. Debugging Strategy
 
 When code misbehaves, do not start by guessing. Follow a quick process:
 
@@ -244,12 +316,12 @@ This habit is the difference between a beginner and a reliable problem-solver.
 
 ---
 
-## 11. A Professional Mindset
+## 14. A Professional Mindset
 
 By this point, you have learned the main building blocks:
 - variables and types
 - loops and conditionals
-- functions and modules
+- functions with type hints and docstrings
 - dictionaries, files, and errors
 - OOP and real-world project design
 
@@ -258,7 +330,7 @@ The next step is not writing longer code. It is writing clearer code that a team
 
 ---
 
-## Deep Dive: Reviewing Code Like a Developer
+## 15. Deep Dive: Reviewing Code Like a Developer
 
 A review session is not only about checking if the project runs. It is about asking “Is this code clear, safe, and easy to change?”
 
@@ -280,14 +352,15 @@ if value:
 
 This is hard to read because it mixes multiple tasks: asking for input, converting, validating, and printing. The improved version separates concerns:
 
-**How to read this example:** The first version mixes prompting, conversion, validation, and output; a bare exception hides unexpected failures and `pass` silently discards them. The revised function improves this by giving the input rule one reusable place.
-
 ```python
+import math
+
+
 def get_valid_positive_number(prompt: str) -> float:
     while True:
         try:
             value = float(input(prompt))
-            if value > 0:
+            if math.isfinite(value) and value > 0:
                 return value
             print("Please enter a number greater than zero.")
         except ValueError:
@@ -304,12 +377,12 @@ When reviewing a project, look for:
 - big functions doing too much at once
 - code that works only for happy-path examples
 
-Great developers are not only coders — they are also reviewers and refactors.
+Great developers are not only coders — they are also reviewers and refactorers.
 
 
 ---
 
-## Understanding the Review Checklist in Practice
+## 16. Understanding the Review Checklist in Practice
 
 The checklist above is most useful when each question is connected to a concrete example. A program can run for one test input and still be fragile; reviewing means looking for the assumptions hidden inside the code.
 
@@ -362,15 +435,26 @@ The broad `except:` in the messy example catches nearly every kind of failure, i
 
 Catch the specific expected exception instead:
 
-**How to read this example:** Conversion is inside `try` because user text may not represent a number. Catching `ValueError` gives a clearer message and chains the original cause; the later comparison handles numeric values that still violate the positive-amount rule.
+**How to read this example:** Conversion is inside `try` because user text may not represent a number. Catching only `ValueError` leaves unrelated bugs visible. `raise … from exc` replaces the technical message with a clearer one and chains the original error as `__cause__`, so the caller can inform the user and the traceback still shows the root cause.
 
 ```python
+def to_amount(user_text: str) -> float:
+    try:
+        return float(user_text)
+    except ValueError as exc:
+        message = f"Not an amount: {user_text!r}"
+        raise ValueError(message) from exc
+
+
 try:
-    amount = float(user_text)
-except ValueError:
-    print("Enter an amount such as 12.50.")
+    amount = to_amount("12,50")
+except ValueError as err:
+    print(err)
+    print(err.__cause__)
 else:
     print(f"Accepted amount: {amount:.2f}")
+# Not an amount: '12,50'
+# could not convert string to float: '12,50'
 ```
 
 This handles the predictable conversion problem without concealing unrelated bugs. When reviewing error handling, ask whether the program informs the user, preserves the cause, and has a sensible next step.
@@ -402,7 +486,7 @@ When reviewing comments, check that they still agree with the code. Incorrect co
 
 ### A Small Before-and-After Review
 
-**How to read this example:** This example applies the concept of A Small Before-and-After Review. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+**How to read this example:** The name `f` hides the purpose, and the bare `except:` with `pass` turns every failure, even a typo inside the `try`, into a silent `None` that the caller cannot tell apart from a real result.
 
 ```python
 # Before: unclear purpose, broad exception, silent failure
@@ -413,20 +497,25 @@ def f(v):
         pass
 ```
 
-**How to read this example:** This example applies the concept of A Small Before-and-After Review. Follow each operation from its input to its result, and connect the syntax to the behavior the section describes; then predict how changing one input would alter the output.
+**How to read this example:** The name and docstring state the purpose. Only `ValueError` is caught, and `from exc` keeps the original cause. `math.isfinite` rejects `nan` and `inf`, which `float()` accepts, before the positive-amount rule.
 
 ```python
 # After: clear purpose and an explicit failure contract
+import math
+
+
 def parse_amount(text: str) -> float:
     """Convert user-entered text to a number or explain why it is invalid."""
     try:
         amount = float(text)
     except ValueError as exc:
         raise ValueError("Amount must be numeric, for example 12.50.") from exc
-
-    if amount <= 0:
-        raise ValueError("Amount must be greater than zero.")
+    if not math.isfinite(amount) or amount <= 0:
+        raise ValueError("Amount must be a finite number greater than zero.")
     return amount
+
+
+print(parse_amount("12.50"))  # 12.5
 ```
 
 The second function is longer, but its behavior is easier to reason about: it tells us what it accepts, rejects invalid values, and preserves useful error context. A review is successful when it improves those qualities without adding complexity for its own sake.

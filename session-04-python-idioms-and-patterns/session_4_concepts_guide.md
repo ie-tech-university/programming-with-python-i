@@ -73,7 +73,7 @@ print(flat)   # [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 > **When NOT to use comprehensions:** If the logic requires multiple `if/else` branches, variable assignments, or is longer than ~80 characters, use a regular `for` loop instead. Readability always wins.
 
-> Go to **Exercise 1 (Loop Refactoring Workshop)** where you will convert traditional loops into clean comprehensions.
+> Go to **Exercise 1 (Loop Refactoring Workshop)**, where you will convert traditional loops into clean comprehensions.
 
 ---
 
@@ -117,10 +117,11 @@ print(code_lookup)   # {'Spain': 'ES', 'France': 'FR', 'Germany': 'DE'}
 # Remove duplicates while transforming
 words = ["Hello", "HELLO", "hello", "World", "WORLD"]
 unique_lower = {w.lower() for w in words}
-print(unique_lower)   # {'hello', 'world'}
+# Sets have no fixed order: sort them to print predictably
+print(sorted(unique_lower))   # ['hello', 'world']
 ```
 
-> Go to **Exercise 2 (Data Transformer)** where you will use dict and set comprehensions to reshape data.
+> Go to **Exercise 2 (Data Transformer)**, where you will use dict and set comprehensions to reshape data.
 
 ---
 
@@ -164,17 +165,31 @@ cities = ["Madrid", "London", "Paris"]
 
 for name, age, city in zip(names, ages, cities):
     print(f"{name}, age {age}, from {city}")
+
+# Output:
+# Alice, age 22, from Madrid
+# Bob, age 25, from London
+# Charlie, age 30, from Paris
 ```
 
 ### What Happens with Unequal Lengths?
 
-`zip()` stops at the **shortest** iterable:
+`zip()` stops at the **shortest** iterable; `itertools.zip_longest()` keeps everything and `strict=True` (Python 3.10+) raises an error instead:
 
 ```python
+from itertools import zip_longest
+
 a = [1, 2, 3]
 b = ["x", "y"]
 
-print(list(zip(a, b)))   # [(1, 'x'), (2, 'y')] — the 3 is dropped
+# Default: stops at the shortest, so the 3 is dropped
+print(list(zip(a, b)))   # [(1, 'x'), (2, 'y')]
+
+# Keep everything: pad the shorter iterable
+print(list(zip_longest(a, b, fillvalue="?")))   # [(1, 'x'), (2, 'y'), (3, '?')]
+
+# Fail loudly when lengths must match
+list(zip(a, b, strict=True))   # ValueError: zip() argument 2 is shorter than argument 1
 ```
 
 ### Unzipping with `zip(*...)`
@@ -189,7 +204,7 @@ print(names)    # ('Alice', 'Bob', 'Charlie')
 print(scores)   # (92, 78, 85)
 ```
 
-> Go to **Exercise 3 (Parallel Data Merger)** where you will use `zip()` to combine and align multiple data sources.
+> Go to **Exercise 3 (Parallel Data Merger)**, where you will use `zip()` to combine and align multiple data sources.
 
 ---
 
@@ -247,6 +262,8 @@ for i, score in enumerate(scores):
 
 A **lambda** is a tiny, unnamed function defined in a single line. Lambdas are not meant to replace `def` — they are used for short, throwaway operations, typically passed as arguments to other functions.
 
+Assigning a lambda to a name, as in this example, is for illustration only: PEP 8 recommends `def` whenever a function needs a name.
+
 ### Syntax
 
 ```python
@@ -254,7 +271,7 @@ A **lambda** is a tiny, unnamed function defined in a single line. Lambdas are n
 def double(x):
     return x * 2
 
-# Equivalent lambda
+# Equivalent lambda (illustration only)
 double = lambda x: x * 2
 
 print(double(5))   # 10
@@ -275,6 +292,7 @@ print(by_score)   # [('Bob', 78), ('Charlie', 85), ('Alice', 92)]
 ### Multi-Argument Lambdas
 
 ```python
+# Named here for illustration only (PEP 8 prefers def)
 add = lambda x, y: x + y
 print(add(3, 7))   # 10
 ```
@@ -295,7 +313,7 @@ def process(x):
     return str(x)
 ```
 
-> Go to **Exercise 4 (Lambda Sorting Lab)** where you will use lambdas as sorting keys for complex data.
+> Go to **Exercise 4 (Lambda Sorting Lab)**, where you will use lambdas as sorting keys for complex data.
 
 ---
 
@@ -329,7 +347,7 @@ print(temps_f)   # [32.0, 68.0, 98.6, 212.0]
 
 ### `filter(function, iterable)` — Keep Only Matching Items
 
-The function must return `True` or `False`. Only items where it returns `True` are kept:
+The function returns a truthy or falsy value (usually `True` or `False`). Only items with a truthy result are kept:
 
 ```python
 numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -364,7 +382,7 @@ result = [x ** 2 for x in range(1, 11) if x % 2 == 0]
 | Working in a functional style | You want maximum readability |
 | Chaining with other functional tools | The logic includes `if/else` |
 
-> Go to **Exercise 5 (Functional Data Pipeline)** where you will chain `map()` and `filter()` to clean and transform datasets.
+> Go to **Exercise 5 (Functional Data Pipeline)**, where you will chain `map()` and `filter()` to clean and transform datasets.
 
 ---
 
@@ -383,16 +401,16 @@ print(sorted(numbers, reverse=True))  # [9, 8, 5, 2, 1]
 ### Sorting by a Custom Key
 
 ```python
-words = ["banana", "Apple", "cherry", "date"]
+words = ["banana", "apple", "Cherry", "fig"]
 
 # Default: uppercase letters come before lowercase (ASCII order)
-print(sorted(words))   # ['Apple', 'banana', 'cherry', 'date']
+print(sorted(words))   # ['Cherry', 'apple', 'banana', 'fig']
 
 # Case-insensitive sort
-print(sorted(words, key=str.lower))   # ['Apple', 'banana', 'cherry', 'date']
+print(sorted(words, key=str.lower))   # ['apple', 'banana', 'Cherry', 'fig']
 
 # Sort by word length
-print(sorted(words, key=len))   # ['date', 'Apple', 'banana', 'cherry']
+print(sorted(words, key=len))   # ['fig', 'apple', 'banana', 'Cherry']
 ```
 
 ### Sorting Dictionaries in a List
@@ -408,11 +426,11 @@ employees = [
 
 # Sort by salary (ascending)
 by_salary = sorted(employees, key=lambda e: e["salary"])
-print(by_salary[0]["name"])   # "Bob"
+print(by_salary[0]["name"])   # Bob
 
 # Sort by salary (descending)
 top_earners = sorted(employees, key=lambda e: e["salary"], reverse=True)
-print(top_earners[0]["name"])   # "Charlie"
+print(top_earners[0]["name"])   # Charlie
 ```
 
 ### Sorting by Multiple Criteria
@@ -435,7 +453,7 @@ for s in result:
 # Charlie: B, 92
 ```
 
-> Go to **Exercise 4 (Lambda Sorting Lab)** where you will apply custom sorting to complex data structures.
+> Go to **Exercise 4 (Lambda Sorting Lab)**, where you will apply custom sorting to complex data structures.
 
 ---
 
@@ -449,16 +467,16 @@ A **ternary expression** lets you write a simple `if/else` in a single line:
 value = true_result if condition else false_result
 ```
 
-### Examples
+### Ternary Expressions in Practice
 
 ```python
 age = 20
 status = "adult" if age >= 18 else "minor"
-print(status)   # "adult"
+print(status)   # adult
 
 # Inside an f-string
 score = 85
-print(f"Result: {'PASS' if score >= 70 else 'FAIL'}")   # "Result: PASS"
+print(f"Result: {'PASS' if score >= 70 else 'FAIL'}")   # Result: PASS
 
 # Inside a list comprehension
 numbers = [1, -2, 3, -4, 5]
@@ -508,8 +526,8 @@ print(middle)   # [2, 3, 4]
 print(last)     # 5
 
 head, *tail = ["Alice", "Bob", "Charlie", "Diana"]
-print(head)   # "Alice"
-print(tail)   # ["Bob", "Charlie", "Diana"]
+print(head)   # Alice
+print(tail)   # ['Bob', 'Charlie', 'Diana']
 ```
 
 ### Unpacking in Function Calls
@@ -527,8 +545,35 @@ greet(*data)   # Same as greet("Alice", 22, "Madrid")
 ```python
 a, b = 1, 2
 a, b = b, a    # Swap without a temp variable!
-print(a, b)    # 2, 1
+print(a, b)    # 2 1
 ```
+
+### Dict Unpacking and Nested Unpacking
+
+**Copying and Updating a Dict with `**`**
+
+`{**d}` copies every key-value pair of `d`; keys written after it add or override values, and the original stays untouched:
+
+```python
+product = {"name": "laptop", "price": 999.99}
+updated = {**product, "name": "Laptop", "stock": 3}
+print(updated)   # {'name': 'Laptop', 'price': 999.99, 'stock': 3}
+
+# The original dict is unchanged
+print(product)   # {'name': 'laptop', 'price': 999.99}
+```
+
+**Nested Unpacking in `for` Loops: mirror the shape of each item**
+
+```python
+results = [("Alice", 90.0, "PASS"), ("Bob", 86.5, "PASS")]
+for rank, (name, avg, label) in enumerate(results, start=1):
+    print(f"#{rank}: {name} {avg} [{label}]")
+# #1: Alice 90.0 [PASS]
+# #2: Bob 86.5 [PASS]
+```
+
+> You will use `{**r, "key": value}` inside `map()` in Exercise 5 and nested unpacking with `enumerate()` in Exercise 6.
 
 > Unpacking is used throughout the exercises — especially with `zip()`, `enumerate()`, and `.items()`.
 
@@ -549,7 +594,7 @@ Here is a side-by-side comparison of **non-Pythonic** vs. **Pythonic** code. The
 | Simple `if/else` assign | 4-line block | Ternary expression |
 | Swap variables | Temp variable | `a, b = b, a` |
 | Build a dict from lists | Loop + manual assignment | `dict(zip(keys, values))` |
-| Check membership | Loop with flag | `x in set(...)` |
+| Check membership | Loop with flag | `x in collection` (a `set` for repeated lookups) |
 
 > Go to **Exercise 6 (Pythonic Refactoring Challenge)** — the capstone exercise where you will refactor an entire script from clunky, verbose code into clean, idiomatic Python.
 
@@ -558,21 +603,21 @@ Here is a side-by-side comparison of **non-Pythonic** vs. **Pythonic** code. The
 ## Quick Reference Cheat Sheet
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│  LIST COMPREHENSION    [expr for x in iterable if cond]       │
-│  DICT COMPREHENSION    {k: v for k, v in iterable if cond}    │
-│  SET COMPREHENSION     {expr for x in iterable}               │
-│  ZIP                   for a, b in zip(list1, list2):          │
-│  ENUMERATE             for i, val in enumerate(lst, start=0):  │
-│  LAMBDA                lambda x: x * 2                        │
-│  MAP                   list(map(func, iterable))               │
-│  FILTER                list(filter(func, iterable))            │
-│  SORTED + KEY          sorted(data, key=lambda x: x[1])       │
-│  TERNARY               val = a if condition else b             │
-│  UNPACKING             first, *rest = my_list                  │
-│  SWAP                  a, b = b, a                             │
-│  DICT FROM LISTS       dict(zip(keys, values))                 │
-└───────────────────────────────────────────────────────────────┘
+LIST COMPREHENSION    [expr for x in iterable if cond]
+DICT COMPREHENSION    {k: v for k, v in iterable if cond}
+SET COMPREHENSION     {expr for x in iterable}
+ZIP                   for a, b in zip(list1, list2):
+ENUMERATE             for i, val in enumerate(lst, start=0):
+LAMBDA                lambda x: x * 2
+MAP                   list(map(func, iterable))
+FILTER                list(filter(func, iterable))
+SORTED + KEY          sorted(data, key=lambda x: x[1])
+TERNARY               val = a if condition else b
+UNPACKING             first, *rest = my_list
+SWAP                  a, b = b, a
+DICT FROM LISTS       dict(zip(keys, values))
+DICT UNPACKING        {**d, "key": value}
+NESTED UNPACKING      for i, (a, b) in enumerate(pairs):
 ```
 
 ---
