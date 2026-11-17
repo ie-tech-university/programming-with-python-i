@@ -1,9 +1,11 @@
 # Session IX: Concepts Guide
+
 ## Advanced Object-Oriented Programming Techniques
 
 In Session VIII, you learned how to create classes, objects, attributes, and instance methods. In this session, you will go further by building **more flexible class hierarchies** using inheritance, class methods, static methods, and polymorphism.
 
 These tools let you design systems that are easier to extend and maintain. For example:
+
 - a `RecurringTransaction` can extend a base `Transaction`
 - a class method can summarize many transactions at once
 - a static method can validate input without needing a specific object
@@ -42,6 +44,7 @@ class Dog(Animal):
 ```
 
 Now `Dog` has both:
+
 - inherited attributes from `Animal`
 - new methods defined in `Dog`
 
@@ -138,6 +141,7 @@ print(Student.get_school())
 ### Why Use a Class Method?
 
 Use a class method when:
+
 - the logic belongs to the whole class, not one object
 - you want an alternative constructor
 - you want to summarize or process a collection of objects
@@ -179,6 +183,7 @@ print(Validator.is_positive_number(10))   # True
 ### When to Use a Static Method
 
 Use a static method when:
+
 - the function is logically related to the class
 - but it does not depend on a specific object
 - and it does not need the class itself either
@@ -219,6 +224,7 @@ for animal in animals:
 ```
 
 Output:
+
 ```python
 Woof
 Meow
@@ -229,6 +235,7 @@ The loop does not need to know which subclass each object is. It just calls `.sp
 ### Why This Matters
 
 Polymorphism makes your code more flexible:
+
 - one loop can process many related object types
 - new subclasses can be added later without changing the loop
 - shared interfaces make designs cleaner
@@ -242,6 +249,7 @@ Polymorphism makes your code more flexible:
 Suppose you are building a budget app.
 
 ### Base Class
+
 ```python
 class Transaction:
     def __init__(self, amount, category):
@@ -250,6 +258,7 @@ class Transaction:
 ```
 
 ### Subclass
+
 ```python
 class RecurringTransaction(Transaction):
     def __init__(self, amount, category, frequency):
@@ -258,6 +267,7 @@ class RecurringTransaction(Transaction):
 ```
 
 ### Related Utility Methods
+
 ```python
 class Transaction:
     @staticmethod
@@ -273,6 +283,7 @@ class Transaction:
 ```
 
 This design combines:
+
 - inheritance
 - `super()`
 - static methods
@@ -323,11 +334,11 @@ This design lets you add validation, printing, searching, and updating more natu
 
 ## 9. Choosing Between Instance, Class, and Static Methods
 
-| Method Type | First Parameter | Works With | Use It When |
-|------------|----------------|-----------|-------------|
-| Instance method | `self` | One specific object | Behavior depends on object state |
-| Class method | `cls` | The class itself | Behavior applies to the class as a whole |
-| Static method | none | Neither object nor class | Utility logic related to the class |
+| Method Type     | First Parameter | Works With               | Use It When                              |
+| --------------- | --------------- | ------------------------ | ---------------------------------------- |
+| Instance method | `self`        | One specific object      | Behavior depends on object state         |
+| Class method    | `cls`         | The class itself         | Behavior applies to the class as a whole |
+| Static method   | none            | Neither object nor class | Utility logic related to the class       |
 
 ### Example Side by Side
 
