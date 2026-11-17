@@ -1,0 +1,4 @@
+Hello World!
+This has control characters.
+Normal line here.
+Another messy line.

@@ -1,0 +1,17 @@
+[
+  {
+    "name": "Alice",
+    "age": 22,
+    "email": "alice@test.com"
+  },
+  {
+    "name": "Bob",
+    "age": 25
+  },
+  "this is not a dict",
+  {
+    "name": "Diana",
+    "age": "not_a_number",
+    "email": "diana@test.com"
+  }
+]

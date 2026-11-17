@@ -1,0 +1,5 @@
+name,age,email
+Alice,22,alice@test.com
+Bob,25
+Charlie,30,charlie@test.com,extra_field
+Diana,28,diana@test.com
