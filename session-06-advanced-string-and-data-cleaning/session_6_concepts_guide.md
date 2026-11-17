@@ -1,4 +1,5 @@
 # Session VI: Concepts Guide
+
 ## Advanced String Handling and Data Cleaning
 
 This guide covers how to **manipulate, validate, and clean text data** — one of the most common and critical tasks in real-world programming. Read through the explanations and study the examples **before** attempting the exercises.
@@ -67,14 +68,14 @@ print(clean)   # "Hello World from Python"
 
 ### Checking String Content
 
-| Method | What It Tests | Example |
-|--------|--------------|---------|
-| `.startswith(s)` | Begins with `s` | `"hello".startswith("he")` → `True` |
-| `.endswith(s)` | Ends with `s` | `"file.csv".endswith(".csv")` → `True` |
-| `.isdigit()` | All characters are digits | `"123".isdigit()` → `True` |
-| `.isalpha()` | All characters are letters | `"hello".isalpha()` → `True` |
-| `.isalnum()` | All characters are letters or digits | `"abc123".isalnum()` → `True` |
-| `.isspace()` | All characters are whitespace | `"  \t".isspace()` → `True` |
+| Method             | What It Tests                        | Example                                     |
+| ------------------ | ------------------------------------ | ------------------------------------------- |
+| `.startswith(s)` | Begins with `s`                    | `"hello".startswith("he")` → `True`    |
+| `.endswith(s)`   | Ends with `s`                      | `"file.csv".endswith(".csv")` → `True` |
+| `.isdigit()`     | All characters are digits            | `"123".isdigit()` → `True`             |
+| `.isalpha()`     | All characters are letters           | `"hello".isalpha()` → `True`           |
+| `.isalnum()`     | All characters are letters or digits | `"abc123".isalnum()` → `True`          |
+| `.isspace()`     | All characters are whitespace        | `"  \t".isspace()` → `True`            |
 
 ### Finding and Counting Substrings
 
@@ -127,32 +128,32 @@ print(matches)   # ['555-1234', '555-5678']
 
 ### Essential Regex Syntax
 
-| Pattern | Meaning | Example Match |
-|---------|---------|--------------|
-| `\d` | Any digit (0-9) | `"5"` |
-| `\D` | Any non-digit | `"a"`, `" "` |
-| `\w` | Any word character (letter, digit, `_`) | `"a"`, `"5"`, `"_"` |
-| `\W` | Any non-word character | `" "`, `"!"` |
-| `\s` | Any whitespace (space, tab, newline) | `" "`, `"\t"` |
-| `\S` | Any non-whitespace | `"a"`, `"5"` |
-| `.` | Any character except newline | `"a"`, `"5"`, `" "` |
+| Pattern | Meaning                                   | Example Match             |
+| ------- | ----------------------------------------- | ------------------------- |
+| `\d`  | Any digit (0-9)                           | `"5"`                   |
+| `\D`  | Any non-digit                             | `"a"`, `" "`          |
+| `\w`  | Any word character (letter, digit, `_`) | `"a"`, `"5"`, `"_"` |
+| `\W`  | Any non-word character                    | `" "`, `"!"`          |
+| `\s`  | Any whitespace (space, tab, newline)      | `" "`, `"\t"`         |
+| `\S`  | Any non-whitespace                        | `"a"`, `"5"`          |
+| `.`   | Any character except newline              | `"a"`, `"5"`, `" "` |
 
 ### Quantifiers — How Many?
 
-| Quantifier | Meaning | Example |
-|-----------|---------|---------|
-| `{3}` | Exactly 3 | `\d{3}` matches `"123"` |
-| `{2,4}` | Between 2 and 4 | `\d{2,4}` matches `"12"`, `"1234"` |
-| `*` | Zero or more | `\d*` matches `""`, `"123"` |
-| `+` | One or more | `\d+` matches `"1"`, `"123"` |
-| `?` | Zero or one (optional) | `\d?` matches `""`, `"5"` |
+| Quantifier | Meaning                | Example                                  |
+| ---------- | ---------------------- | ---------------------------------------- |
+| `{3}`    | Exactly 3              | `\d{3}` matches `"123"`              |
+| `{2,4}`  | Between 2 and 4        | `\d{2,4}` matches `"12"`, `"1234"` |
+| `*`      | Zero or more           | `\d*` matches `""`, `"123"`        |
+| `+`      | One or more            | `\d+` matches `"1"`, `"123"`       |
+| `?`      | Zero or one (optional) | `\d?` matches `""`, `"5"`          |
 
 ### Anchors — Where in the String?
 
-| Anchor | Meaning |
-|--------|---------|
-| `^` | Start of string |
-| `$` | End of string |
+| Anchor | Meaning         |
+| ------ | --------------- |
+| `^`  | Start of string |
+| `$`  | End of string   |
 
 ```python
 import re
@@ -164,13 +165,13 @@ print(bool(re.match(r"^\d+$", "123abc")))   # False
 
 ### The Key `re` Functions
 
-| Function | What It Does | Returns |
-|----------|-------------|---------|
-| `re.match(pattern, string)` | Match at the **start** of string | Match object or `None` |
-| `re.search(pattern, string)` | Find **first** match anywhere | Match object or `None` |
-| `re.findall(pattern, string)` | Find **all** matches | List of strings |
-| `re.sub(pattern, replacement, string)` | **Replace** all matches | New string |
-| `re.split(pattern, string)` | **Split** string by pattern | List of strings |
+| Function                                 | What It Does                           | Returns                  |
+| ---------------------------------------- | -------------------------------------- | ------------------------ |
+| `re.match(pattern, string)`            | Match at the **start** of string | Match object or `None` |
+| `re.search(pattern, string)`           | Find **first** match anywhere    | Match object or `None` |
+| `re.findall(pattern, string)`          | Find **all** matches             | List of strings          |
+| `re.sub(pattern, replacement, string)` | **Replace** all matches          | New string               |
+| `re.split(pattern, string)`            | **Split** string by pattern      | List of strings          |
 
 ### `re.match()` vs `re.search()`
 
@@ -353,15 +354,15 @@ def parse_phone(raw_phone):
     """Parse a phone number into (XXX) XXX-XXXX format."""
     # Step 1: Remove everything that isn't a digit
     digits = re.sub(r"\D", "", raw_phone)
-    
+  
     # Step 2: Handle country code (if 11 digits starting with 1)
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]    # Remove leading country code
-    
+  
     # Step 3: Validate length
     if len(digits) != 10:
         return None    # Invalid phone number
-    
+  
     # Step 4: Reformat
     area = digits[:3]
     prefix = digits[3:6]
@@ -375,6 +376,7 @@ for t in tests:
 ```
 
 Output:
+
 ```
    (555) 123-4567  →  (555) 123-4567
      555.123.4567  →  (555) 123-4567
@@ -445,13 +447,13 @@ def clean_and_validate_email(raw_email):
     """Clean and validate an email address."""
     if not isinstance(raw_email, str):
         return None
-    
+  
     # Remove whitespace and convert to lowercase
     email = raw_email.strip().lower()
-    
+  
     # Remove common accidental characters
     email = email.replace(" ", "").replace(",", ".")
-    
+  
     # Validate
     pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     if re.match(pattern, email):
@@ -471,11 +473,11 @@ When working with data from the web, files, or APIs, you'll encounter encoding i
 
 Text is stored as **numbers** in memory. An **encoding** maps characters to numbers:
 
-| Encoding | What It Covers | Notes |
-|----------|---------------|-------|
-| **ASCII** | English letters, digits, basic symbols (128 chars) | The oldest standard |
-| **Latin-1** (ISO-8859-1) | Western European characters (256 chars) | Extends ASCII |
-| **UTF-8** | Every character in every language | The modern standard — **always use this** |
+| Encoding                       | What It Covers                                     | Notes                                            |
+| ------------------------------ | -------------------------------------------------- | ------------------------------------------------ |
+| **ASCII**                | English letters, digits, basic symbols (128 chars) | The oldest standard                              |
+| **Latin-1** (ISO-8859-1) | Western European characters (256 chars)            | Extends ASCII                                    |
+| **UTF-8**                | Every character in every language                  | The modern standard — **always use this** |
 
 ### Reading Files with Encoding
 
@@ -624,13 +626,13 @@ if __name__ == "__main__":
 
 ### Module Design Principles
 
-| Principle | Why | Example |
-|-----------|-----|---------|
-| **One function, one job** | Easier to test and reuse | `clean_phone()` only cleans phones |
-| **Consistent return types** | Callers know what to expect | Return `None` for invalid, cleaned string for valid |
-| **No `input()` or `print()`** | Modules should be silent — the caller decides what to display | Return data; let `main.py` print it |
-| **Docstrings on every function** | Others (and future you) need to know what it does | `"""Clean and validate an email."""` |
-| **Safe defaults** | Handle `None`, empty strings, and wrong types gracefully | `if not isinstance(text, str): return ""` |
+| Principle                               | Why                                                            | Example                                               |
+| --------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------- |
+| **One function, one job**         | Easier to test and reuse                                       | `clean_phone()` only cleans phones                  |
+| **Consistent return types**       | Callers know what to expect                                    | Return `None` for invalid, cleaned string for valid |
+| **No `input()` or `print()`** | Modules should be silent — the caller decides what to display | Return data; let `main.py` print it                 |
+| **Docstrings on every function**  | Others (and future you) need to know what it does              | `"""Clean and validate an email."""`                |
+| **Safe defaults**                 | Handle `None`, empty strings, and wrong types gracefully     | `if not isinstance(text, str): return ""`           |
 
 > Go to **Exercise 6 (Data Cleaning Module)** where you will build a full reusable cleaning module and use it to process a messy dataset.
 
