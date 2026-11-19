@@ -1,4 +1,5 @@
 # Session X: Concepts Guide
+
 ## Lab — Building an Interactive Personal Budget Manager
 
 This session is a **hands-on lab** where you combine everything from Sessions I–IX into a single, complete application. It is mostly **applied engineering**: the only new tools are small ones, each explained where it first appears: `__repr__`, `math.isfinite()`, `os.path.dirname()`, `os.makedirs()`, `os.replace()`, and running a multi-file project with `uv run python -m src.main`.
@@ -32,13 +33,13 @@ budget_manager/            # project root: run commands here
 
 ### Why This Structure Matters
 
-| Concern | Module | Sessions Applied |
-|---------|--------|-----------------|
-| Data modeling | `models.py` | Session VIII–IX (OOP) |
-| Persistence | `file_handler.py` | Session V (File I/O) |
-| Input safety | `validators.py` | Session II (Error Handling), VI (String Cleaning) |
-| Reporting | `reports.py` | Session IV (Idioms), III (Data Structures) |
-| User interface | `main.py` | Session II (Menus), VII (CLI) |
+| Concern        | Module              | Sessions Applied                                  |
+| -------------- | ------------------- | ------------------------------------------------- |
+| Data modeling  | `models.py`       | Session VIII–IX (OOP)                            |
+| Persistence    | `file_handler.py` | Session V (File I/O)                              |
+| Input safety   | `validators.py`   | Session II (Error Handling), VI (String Cleaning) |
+| Reporting      | `reports.py`      | Session IV (Idioms), III (Data Structures)        |
+| User interface | `main.py`         | Session II (Menus), VII (CLI)                     |
 
 This is a classic software design principle, **separation of concerns**: each part of the system does one job, so the rest of the code stays simple.
 
@@ -440,6 +441,7 @@ print(transactions)
 ### Why This Matters
 
 When your application grows, small issues become expensive:
+
 - a duplicated transaction can distort totals
 - a missing category makes reporting confusing
 - invalid numbers can crash the program in the middle of a save
