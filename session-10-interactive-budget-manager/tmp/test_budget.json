@@ -1,0 +1,9 @@
+[
+  {
+    "amount": 50,
+    "category": "Food",
+    "description": "Groceries",
+    "is_income": false,
+    "date": "2026-10-01"
+  }
+]

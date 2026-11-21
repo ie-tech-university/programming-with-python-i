@@ -1,0 +1,16 @@
+[
+  {
+    "amount": 100.0,
+    "category": "Food",
+    "description": "Test income",
+    "is_income": true,
+    "date": "2026-11-21T01:06:55.326736"
+  },
+  {
+    "amount": 25.0,
+    "category": "Food",
+    "description": "Test lunch",
+    "is_income": false,
+    "date": "2026-11-21T01:07:09.375895"
+  }
+]

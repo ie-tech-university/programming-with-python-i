@@ -1,0 +1,3 @@
+date,category,description,amount,is_income
+2026-11-21T01:06:55.326736,Food,Test income,100.0,True
+2026-11-21T01:07:09.375895,Food,Test lunch,25.0,False
