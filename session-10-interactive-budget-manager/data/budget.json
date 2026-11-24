@@ -1,0 +1,16 @@
+[
+  {
+    "amount": 100.0,
+    "category": "Salary",
+    "description": "Money",
+    "is_income": true,
+    "date": "2026-11-24"
+  },
+  {
+    "amount": 30.0,
+    "category": "Transport",
+    "description": "Ubers",
+    "is_income": false,
+    "date": "2026-11-24"
+  }
+]

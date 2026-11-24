@@ -1,0 +1,3 @@
+date,category,description,amount,is_income
+2026-11-24,Salary,Money,100.0,True
+2026-11-24,Transport,Ubers,30.0,False
