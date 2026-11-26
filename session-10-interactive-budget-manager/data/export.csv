@@ -1,0 +1,4 @@
+date,category,description,amount,is_income
+2026-11-26,Freelance,online work,500.0,True
+2026-11-26,Salary,Office Work,200000.0,True
+2026-11-26,Other,Gas,3500.0,False

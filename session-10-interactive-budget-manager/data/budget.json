@@ -1,0 +1,23 @@
+[
+    {
+        "amount": 500.0,
+        "category": "Freelance",
+        "description": "online work",
+        "is_income": true,
+        "date": "2026-11-26"
+    },
+    {
+        "amount": 200000.0,
+        "category": "Salary",
+        "description": "Office Work",
+        "is_income": true,
+        "date": "2026-11-26"
+    },
+    {
+        "amount": 3500.0,
+        "category": "Other",
+        "description": "Gas",
+        "is_income": false,
+        "date": "2026-11-26"
+    }
+]
