@@ -1,4 +1,5 @@
 # Session XII: Concepts Guide
+
 ## Working with APIs and JSON Data
 
 Connect to REST APIs, process JSON responses, handle errors and authentication.
@@ -11,12 +12,12 @@ Connect to REST APIs, process JSON responses, handle errors and authentication.
 
 An **API** (Application Programming Interface) is a contract between two programs. A **REST API** uses HTTP to let you request and send data over the web. The **method** tells the server what kind of action the client wants:
 
-| Method | Purpose | Example |
-|--------|---------|---------|
-| `GET` | Read data | A dashboard requests the current exchange rate |
-| `POST` | Send new data | A form sends a new expense record |
-| `PUT` | Replace or update data at a known address | Edit a profile |
-| `DELETE` | Remove data | Delete a record |
+| Method     | Purpose                                   | Example                                        |
+| ---------- | ----------------------------------------- | ---------------------------------------------- |
+| `GET`    | Read data                                 | A dashboard requests the current exchange rate |
+| `POST`   | Send new data                             | A form sends a new expense record              |
+| `PUT`    | Replace or update data at a known address | Edit a profile                                 |
+| `DELETE` | Remove data                               | Delete a record                                |
 
 These method names are an HTTP convention, not Python keywords; the API documentation says which methods each endpoint accepts. A `GET` should not create or delete data, because tools and users expect it to be safe to repeat.
 
@@ -76,14 +77,14 @@ print(type(data).__name__)               # dict
 
 The first digit gives the family: `2xx` success, `4xx` a problem with the request, `5xx` a problem on the server. `raise_for_status()` turns every `4xx`/`5xx` into a `requests.exceptions.HTTPError`.
 
-| Code | Meaning | What your code should do |
-|------|---------|--------------------------|
-| `200` | OK | Read the body |
-| `201` | Created | A `POST` succeeded; read the new record |
-| `400` | Bad Request | Fix the data or parameters you sent |
-| `401` | Unauthorized | Credentials are missing or invalid |
-| `404` | Not Found | Check the URL or the resource name |
-| `429` | Too Many Requests | Slow down and retry later (section 9) |
+| Code    | Meaning               | What your code should do                         |
+| ------- | --------------------- | ------------------------------------------------ |
+| `200` | OK                    | Read the body                                    |
+| `201` | Created               | A `POST` succeeded; read the new record        |
+| `400` | Bad Request           | Fix the data or parameters you sent              |
+| `401` | Unauthorized          | Credentials are missing or invalid               |
+| `404` | Not Found             | Check the URL or the resource name               |
+| `429` | Too Many Requests     | Slow down and retry later (section 9)            |
 | `500` | Internal Server Error | The server failed; retrying at once may not help |
 
 ### Errors Inside a `200` Response
@@ -386,6 +387,7 @@ The user experience is much better when your app fails politely instead of crash
 ### Why This Matters
 
 A production-quality script should:
+
 - fail gracefully when the API is down
 - handle missing or empty JSON calmly
 - avoid re-fetching API data too often, and back off on `429`
