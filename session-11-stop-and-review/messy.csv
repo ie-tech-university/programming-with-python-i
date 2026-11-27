@@ -1,0 +1,7 @@
+name,email,age
+   alice SMITH , ALICE@EMAIL.COM , 25
+ bob Jones,bob@email.com,thirty
+  CAROL  white  , carol@email ,  30
+ David Brown, david.brown@university.edu, 22
+  , missing@email.com, 28
+eve GREEN,eve.green@company.co.uk,27
