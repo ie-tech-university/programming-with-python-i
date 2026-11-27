@@ -1,4 +1,5 @@
 # Session XI: Concepts Guide
+
 ## Python I Foundations Review
 
 This session is a **comprehensive review** of the core concepts from Sessions I–IX, the same building blocks you combined in the Session X Budget Manager lab. Use it as a quick-reference cheat sheet before the second half of the course.
@@ -97,11 +98,11 @@ def calculate_total(price: float, tax_rate: float = 0.21) -> float:
 ## 6. Data Structures (Session III)
 
 | Structure | Mutable | Ordered | Duplicates | Use Case |
-|-----------|---------|---------|------------|----------|
-| `list`    | Yes     | Yes     | Yes        | General  |
-| `tuple`   | No      | Yes     | Yes        | Fixed    |
-| `set`     | Yes     | No      | No         | Unique   |
-| `dict`    | Yes     | Yes*    | Keys: No   | Lookup   |
+| --------- | ------- | ------- | ---------- | -------- |
+| `list`  | Yes     | Yes     | Yes        | General  |
+| `tuple` | No      | Yes     | Yes        | Fixed    |
+| `set`   | Yes     | No      | No         | Unique   |
+| `dict`  | Yes     | Yes*    | Keys: No   | Lookup   |
 
 \* Since Python 3.7, a `dict` keeps its keys in insertion order. A `set` has no guaranteed order.
 
@@ -268,7 +269,6 @@ OOP         class  __init__  super()  @property  __repr__
 
 ---
 
-
 ---
 
 ## 12. Review Habits That Make You a Better Developer
@@ -319,6 +319,7 @@ This habit is the difference between a beginner and a reliable problem-solver.
 ## 14. A Professional Mindset
 
 By this point, you have learned the main building blocks:
+
 - variables and types
 - loops and conditionals
 - functions with type hints and docstrings
@@ -326,7 +327,6 @@ By this point, you have learned the main building blocks:
 - OOP and real-world project design
 
 The next step is not writing longer code. It is writing clearer code that a teammate can understand and maintain in a week.
-
 
 ---
 
@@ -378,7 +378,6 @@ When reviewing a project, look for:
 - code that works only for happy-path examples
 
 Great developers are not only coders — they are also reviewers and refactorers.
-
 
 ---
 

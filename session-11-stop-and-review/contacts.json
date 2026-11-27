@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Alice",
+    "email": "alice@email.com",
+    "phone": "612345678",
+    "category": "Friend"
+  },
+  {
+    "name": "Karim",
+    "email": "karim@email.com",
+    "phone": "612345678",
+    "category": "Work"
+  },
+  {
+    "name": "Emma",
+    "email": "emma@email.com",
+    "phone": "612345678",
+    "category": "Work"
+  },
+  {
+    "name": "Ali",
+    "email": "ali@email.com",
+    "phone": "612345678",
+    "category": "Other"
+  }
+]
